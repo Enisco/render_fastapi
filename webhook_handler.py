@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from livestream import end_session, start_session
+from livestream import end_session, start_session, upload_recording
 from models.call_session_model import session_json_to_model
 from models.participant_model import participant_json_to_model
 
@@ -30,6 +30,12 @@ def handle_webhook_event(body: Any):
                 end_session(call_id)
             else:
                 print("User left, not a church")
+
+        elif event_type == "call.recording_ready":
+            participant_data = participant_json_to_model(body)
+            call_id = str(participant_data.call_cid).split(':')[-1]
+            print("Call ID: ", call_id)
+            upload_recording(call_id)
         
         else:
             print("Other event types received: ", event_type)

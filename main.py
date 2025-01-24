@@ -26,6 +26,7 @@ async def receive_webhook_event(request: Request):
     try:
         print("Receiving Event Notification from Stream's Webhook")
         body = await request.json()
+        print(body)
         handle_webhook_event(body)
 
     except Exception as error:

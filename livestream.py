@@ -124,18 +124,18 @@ def start_session(call_id: str):
 
 # -------------- End Session: Stop Live and Stop Recording  --------------
 
-def end_session(call_id):
+async def end_session(call_id):
     try:
         client = Stream(api_key=api_key, api_secret=api_secret)
         call = client.video.call(call_type=call_type, id=call_id)
 
-        stopLive = call.stop_live()
-        stopRecording = call.stop_recording()
+        stopLive = await call.stop_live()
+        stopRecording = await call.stop_recording()
         # TODO: Eject all watchers, close live and end session
         print(f"Stop Live Call and Recording: {stopLive.data} \n-- {stopRecording.data}")
 
         # Post livestream process
-        upload_recording(call_id)
+        # upload_recording(call_id)
 
     except Exception as error:
         handle_exception(error)

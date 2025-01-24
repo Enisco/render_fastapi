@@ -20,6 +20,7 @@ live_recording_storage = "stream-s3"
 
 # ----------------------- Generate Token for User --------------------------
 
+
 def get_user_token(user_id):
     try:
         client = stream.connect(api_key, api_secret)
@@ -39,6 +40,7 @@ def get_user_token(user_id):
 
 # ----------------------- Create New Church Channel --------------------------
 
+
 def setup_church_livestream_channel(church_id):
     try:
         user_token = stream.connect(api_key, api_secret).create_user_token(church_id)
@@ -57,7 +59,7 @@ def setup_church_livestream_channel(church_id):
 
         church_call_id = generate_unique_string(church_id)
         call = client.video.call(call_type=call_type, id=church_call_id)
-        
+
         """
         Initiate church call.
         This starts the call in backstage mode, meaning that users cannot join or interact with the call until the church is going live.
@@ -96,6 +98,7 @@ def setup_church_livestream_channel(church_id):
 
 # -------------- Start New Session: Go Live and Start Recording --------------
 
+
 def start_session(call_id: str):
     try:
         client = Stream(api_key=api_key, api_secret=api_secret)
@@ -124,21 +127,23 @@ def start_session(call_id: str):
 
 # -------------- End Session: Stop Live and Stop Recording  --------------
 
-async def end_session(call_id):
+
+def end_session(call_id):
     try:
         client = Stream(api_key=api_key, api_secret=api_secret)
         call = client.video.call(call_type=call_type, id=call_id)
 
-        stopLive = await call.stop_live()
-        stopRecording = await call.stop_recording()
+        stopLive = call.stop_live()
+        stopRecording = call.stop_recording()
         # TODO: Eject all watchers, close live and end session
-        print(f"Stopped Live Call and Recording: {stopLive.data} \n-- {stopRecording.data}")
+        print(f"Stopped Live Call and Recording")
 
     except Exception as error:
         handle_exception(error)
 
 
 # -------------- Upload Video Recording: Get Recording and Upload to Church Videos --------------
+
 
 def upload_recording(call_id):
     try:
@@ -150,7 +155,7 @@ def upload_recording(call_id):
         print("\n\n List of recordings: ", list_recordings.data)
         recording_url = f"https://gospeltube533267336299.s3.us-east-2.amazonaws.com/{live_recording_storage}/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
         print("\n\n ------ Recordings URL: ", recording_url)
-        
+
         # TODO: Call endpoint to upload recorded livestream here
 
     except Exception as error:
@@ -159,7 +164,8 @@ def upload_recording(call_id):
 
 # ---------------------------Error Handlers------------------------------------
 
-def handle_exception (error):
+
+def handle_exception(error):
     # Handle all exceptions
     response = {"status": False, "message": str(error)}
     print("Error occured: ", str(response))

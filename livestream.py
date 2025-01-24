@@ -68,7 +68,7 @@ def setup_church_livestream_channel(church_id):
                 created_by=UserRequest(
                     id=church_id,
                     name="GtubeChurch " + church_id,
-                    role=admin_call_role,
+                    role=user_call_role,
                 ),
                 settings_override=CallSettingsRequest(
                     recording=RecordSettingsRequest(
@@ -132,10 +132,7 @@ async def end_session(call_id):
         stopLive = await call.stop_live()
         stopRecording = await call.stop_recording()
         # TODO: Eject all watchers, close live and end session
-        print(f"Stop Live Call and Recording: {stopLive.data} \n-- {stopRecording.data}")
-
-        # Post livestream process
-        # upload_recording(call_id)
+        print(f"Stopped Live Call and Recording: {stopLive.data} \n-- {stopRecording.data}")
 
     except Exception as error:
         handle_exception(error)
@@ -152,9 +149,7 @@ def upload_recording(call_id):
         list_recordings = call.list_recordings()
         print("\n\n List of recordings: ", list_recordings.data)
         recording_url = f"https://gospeltube533267336299.s3.us-east-2.amazonaws.com/{live_recording_storage}/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
-        recording_urll = list_recordings.data.recordings[0].url
         print("\n\n ------ Recordings URL: ", recording_url)
-        print("\n ++++++ Recordings URL LINK: ", recording_urll)
         
         # TODO: Call endpoint to upload recorded livestream here
 

@@ -7,6 +7,7 @@ from livestream import (
 )
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
+from webhook_handler import handle_webhook_event
 
 
 app = FastAPI()
@@ -24,15 +25,8 @@ async def receive_webhook_event(request: Request):
     """
     try:
         print("Receiving Event Notification from Stream's Webhook")
-
         body = await request.json()
-        print(body)
-
-        created_at = body.get("created_at")
-        if created_at:
-            print(f"created_at: {created_at}")
-        else:
-            print("No 'created_at' key in the JSON data.")
+        handle_webhook_event(body)
 
     except Exception as error:
         print("Error occured: ", error)

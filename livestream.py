@@ -57,12 +57,7 @@ def setup_church_livestream_channel(church_id):
 
         church_call_id = generate_unique_string(church_id)
         call = client.video.call(call_type=call_type, id=church_call_id)
-
-    except Exception as error:
-        print("\n\n Error initiating call: ", str(error))
-        handle_exception(error)
-
-    try:
+        
         """
         Initiate church call.
         This starts the call in backstage mode, meaning that users cannot join or interact with the call until the church is going live.
@@ -72,7 +67,7 @@ def setup_church_livestream_channel(church_id):
             data=CallRequest(
                 created_by=UserRequest(
                     id=church_id,
-                    name="Gtube Church " + church_id,
+                    name="GtubeChurch " + church_id,
                     role=admin_call_role,
                 ),
                 settings_override=CallSettingsRequest(
@@ -101,8 +96,7 @@ def setup_church_livestream_channel(church_id):
 
 # -------------- Start New Session: Go Live and Start Recording --------------
 
-
-def start_session(call_id):
+def start_session(call_id: str):
     try:
         client = Stream(api_key=api_key, api_secret=api_secret)
 
@@ -121,6 +115,7 @@ def start_session(call_id):
             recording_external_storage=live_recording_storage,
         )
         print("\n Recording Started: ", startRecording.data)
+        # TODO: Call endpoint to update event on Backend
 
     except Exception as error:
         print("\n\n Error going live call: ", error)
@@ -136,6 +131,7 @@ def end_session(call_id):
 
         stopLive = call.stop_live()
         stopRecording = call.stop_recording()
+        # TODO: Eject all watchers, close live and end session
         print(f"Stop Live Call and Recording: {stopLive.data} \n-- {stopRecording.data}")
 
         # Post livestream process

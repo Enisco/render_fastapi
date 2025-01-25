@@ -25,6 +25,7 @@ def handle_webhook_event(body: Any):
             participant_data = participant_json_to_model(body)
             call_id = str(participant_data.call_cid).split(":")[-1]
             print("Call ID: ", call_id)
+
             if "GtubeChurch" in str(participant_data.participant.user.name):
                 print(
                     f"Church Left Call: {participant_data.participant.user.name}. ENDING SESSION"

@@ -85,6 +85,7 @@ def setup_church_livestream_channel(church_id):
             "status": True,
             "message": "Success",
             "call_id": create_call_response.data.call.id,
+            "church_live_name": create_call_response.data.call.created_by.name,
             "rtmp": create_call_response.data.call.ingress.rtmp.address,
             "stream_key": user_token,
         }

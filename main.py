@@ -31,7 +31,7 @@ app = FastAPI()
 # To allow CORS for frontend applications
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["wss://gospeltube-livestream-test-server.onrender.com"],
+    allow_origins=["https://gospeltube-livestream-test-server.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

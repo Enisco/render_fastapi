@@ -89,4 +89,4 @@ async def start_comments_websockets():
     """Start Comments WebSocket server."""
     server = tornado.httpserver.HTTPServer(initialize_comments_socket())
     server.listen(8001)  # The WebSocket runs on port 8001
-    print("Tornado WebSocket server running on ws://localhost:8001/ws/{topic}")
+    print("Comments WebSocket server running on ws://localhost:8001/ws/{topic}")

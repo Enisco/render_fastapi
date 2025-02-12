@@ -90,3 +90,8 @@ async def start_comments_websockets():
     server = tornado.httpserver.HTTPServer(initialize_comments_socket())
     server.listen(8000)
     print("Comments WebSocket server running on ws://localhost:8000/ws/{topic}")
+
+@app.websocket("/ws/{topic}")
+async def websocket_endpoint(websocket: WebSocket, topic: str):
+    print("Topic received from client: ", topic)
+    await websocket.accept()

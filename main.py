@@ -1,5 +1,19 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request, WebSocketDisconnect
+
+import asyncio
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
+
 import json
+import tornado.web
+import tornado.websocket
+import tornado.ioloop
+import tornado.httpserver
+
+from fastapi import FastAPI
+from starlette.websockets import WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 from livestream import (
     get_user_token,
@@ -8,14 +22,25 @@ from livestream import (
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
 from webhook_handler import handle_webhook_event
+from comments_websocket.comments_socket import initialize_comments_socket
 
 
 app = FastAPI()
 
 
+# To allow CORS for frontend applications
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.get("/")
 def root():
-    return {"message": "Hello, from GTube Livestream server"}
+    return {"message": "Hello, from GTube Livestream server, with comments WebSocket"}
 
 
 @app.post("/receive_webhook")
@@ -56,3 +81,12 @@ async def create_church_livestream_channel(church_id: str):
     'church_id' is the church's streamID generated during church account creation in the onboarding.
     """
     return setup_church_livestream_channel(church_id)
+
+
+# Run Comments WebSocket server alongside FastAPI
+@app.on_event("startup")
+async def start_comments_websockets():
+    """Start Comments WebSocket server."""
+    server = tornado.httpserver.HTTPServer(initialize_comments_socket())
+    server.listen(8001)  # The WebSocket runs on port 8001
+    print("Tornado WebSocket server running on ws://localhost:8001/ws/{topic}")

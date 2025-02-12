@@ -85,7 +85,7 @@ def setup_church_livestream_channel(church_id):
             "status": True,
             "message": "Success",
             "call_id": create_call_response.data.call.id,
-            "church_live_name": create_call_response.data.call.created_by.name,
+            "channel_name": create_call_response.data.call.created_by.name,
             "rtmp": create_call_response.data.call.ingress.rtmp.address,
             "stream_key": user_token,
         }
@@ -148,7 +148,7 @@ def end_session(call_id):
 
 def upload_recording(call_id):
     try:
-        time.sleep(30)  # Delay for 30 seconds
+        # time.sleep(30)  # Delay for 30 seconds
         client = Stream(api_key=api_key, api_secret=api_secret)
         call = client.video.call(call_type=call_type, id=call_id)
 

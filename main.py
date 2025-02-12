@@ -88,5 +88,5 @@ async def create_church_livestream_channel(church_id: str):
 async def start_comments_websockets():
     """Start Comments WebSocket server."""
     server = tornado.httpserver.HTTPServer(initialize_comments_socket())
-    server.listen(8001)  # The WebSocket runs on port 8001
-    print("Comments WebSocket server running on ws://localhost:8001/ws/{topic}")
+    server.listen(8000)
+    print("Comments WebSocket server running on ws://localhost:8000/ws/{topic}")

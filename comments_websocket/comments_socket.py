@@ -15,6 +15,10 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     
     clients = {}  # Dictionary to store clients per topic
 
+    def check_origin(self, origin):
+        """Allows WebSocket connections from all origins (fixes 403 error)."""
+        return True
+
     def open(self, topic):
         """Handles a new client connection."""
         self.topic = topic

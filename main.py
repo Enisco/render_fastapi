@@ -22,7 +22,7 @@ from livestream import (
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
 from webhook_handler import handle_webhook_event
-from comments_websocket.comments_socket import CommentsWebsocketServer, initialize_comments_socket
+from comments_websocket.comments_socket import CommentsWebsocketServer, WebSocketHandler, initialize_comments_socket
 
 
 app = FastAPI()
@@ -97,3 +97,28 @@ async def start_comments_websockets():
 # async def websocket_endpoint(websocket: WebSocket, topic: str):
 #     print("Topic received from client: ", topic)
 #     await websocket.accept()
+
+# Create an instance of WebSocketHandler
+manager = WebSocketHandler()
+
+@app.websocket("/ws/{topic}")
+async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
+    """FastAPI WebSocket route that interacts with WebSocketHandler."""
+    
+    print("Topic received from client: ", topic)
+    
+    await manager.connect(websocket, topic)
+    try:
+        while True:
+            data = await websocket.receive_text()  # Receive message from client
+            print(f"Message received on topic {topic}: {data}")
+
+            # Acknowledge receipt
+            ack_message = json.dumps({"ack": f"Received '{data}' on topic '{topic}'"})
+            await websocket.send_text(ack_message)
+
+            # Broadcast message to all clients in the topic
+            await manager.send_message(topic, data)
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, topic)

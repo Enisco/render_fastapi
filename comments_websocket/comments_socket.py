@@ -1,81 +1,31 @@
-
-import json
-import tornado
-import tornado.websocket
-import tornado.web
-import tornado.ioloop
-import tornado.httpserver
-from starlette.websockets import WebSocket
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+from fastapi import FastAPI, WebSocket
 import asyncio
 import json
 
+class WebSocketHandler:
+    """Handles multiple WebSocket connections with FastAPI."""
 
-class WebSocketHandler(tornado.websocket.WebSocketHandler):
-    """Handles WebSocket connections, allowing clients to subscribe to topics."""
-    
-    clients = {}  # Dictionary to store clients per topic
-
-    def check_origin(self, origin):
-        """Allows WebSocket connections from all origins (fixes 403 error)."""
-        return True
-
-    def open(self, topic):
-        """Handles a new client connection."""
-        self.topic = topic
-        if topic not in WebSocketHandler.clients:
-            WebSocketHandler.clients[topic] = []
-        WebSocketHandler.clients[topic].append(self)
-        print(f"Client connected to topic: {topic}")
-        self.write_message(json.dumps({"message": f"Connected to topic: {topic}"}))
-
-    def on_message(self, message):
-        """Handles incoming messages from a client."""
-        print(f"Received on {self.topic}: {message}")
-
-        # Acknowledge the message
-        ack_message = json.dumps({"ack": f"Received '{message}' on topic '{self.topic}'"})
-        self.write_message(ack_message)
-
-        # Optional: Broadcast message to all clients in the topic
-        self.broadcast(self.topic, message)
-
-    def on_close(self):
-        """Handles client disconnection."""
-        if self.topic in WebSocketHandler.clients:
-            WebSocketHandler.clients[self.topic].remove(self)
-            if not WebSocketHandler.clients[self.topic]:  # Remove empty topics
-                del WebSocketHandler.clients[self.topic]
-        print(f"Client disconnected from topic: {self.topic}")
-
-    @classmethod
-    def broadcast(cls, topic, message):
-        """Broadcast a message to all clients subscribed to a specific topic."""
-        if topic in cls.clients:
-            for client in cls.clients[topic]:
-                try:
-                    client.write_message(json.dumps({"broadcast": message}))
-                except:
-                    pass  # Ignore errors if a client is disconnected
-
-
-def initialize_comments_socket():
-    return tornado.web.Application([
-        (r"/ws/([^/]+)", WebSocketHandler),
-    ])
-
-websocket_app = initialize_comments_socket()
-
-# ** Tornado Server Management for FastAPI **
-class CommentsWebsocketServer:
     def __init__(self):
-        self.loop = asyncio.get_event_loop()
-        self.server = None
+        self.active_connections = {}  # Dictionary to store clients per topic
 
-    async def start(self):
-        """Start Tornado WebSocket server within FastAPI's event loop."""
-        print("Starting Tornado WebSocket server...")
-        self.server = tornado.httpserver.HTTPServer(websocket_app)
-        self.server.listen(8000) 
-        
+    async def connect(self, websocket: WebSocket, topic: str):
+        """Accept a WebSocket connection and register it under a topic."""
+        await websocket.accept()
+        if topic not in self.active_connections:
+            self.active_connections[topic] = []
+        self.active_connections[topic].append(websocket)
+        print(f"Client connected to topic: {topic}")
+
+    def disconnect(self, websocket: WebSocket, topic: str):
+        """Handle client disconnection and cleanup."""
+        if topic in self.active_connections and websocket in self.active_connections[topic]:
+            self.active_connections[topic].remove(websocket)
+            if not self.active_connections[topic]:  # Remove empty topics
+                del self.active_connections[topic]
+        print(f"Client disconnected from topic: {topic}")
+
+    async def send_message(self, topic: str, message: str):
+        """Broadcast a message to all clients subscribed to a topic."""
+        if topic in self.active_connections:
+            for connection in self.active_connections[topic]:
+                await connection.send_text(json.dumps({"broadcast": message}))

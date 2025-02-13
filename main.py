@@ -1,19 +1,9 @@
 from fastapi import FastAPI, Request, WebSocketDisconnect
-
-import asyncio
-from hypercorn.config import Config
-from hypercorn.asyncio import serve
-
 import json
-import tornado.web
-import tornado.websocket
-import tornado.ioloop
-import tornado.httpserver
 
 from fastapi import FastAPI
 from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 
 from livestream import (
     get_user_token,
@@ -22,7 +12,7 @@ from livestream import (
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
 from webhook_handler import handle_webhook_event
-from comments_websocket.comments_socket import CommentsWebsocketServer, WebSocketHandler, initialize_comments_socket
+from comments_websocket.comments_socket import WebSocketHandler
 
 
 app = FastAPI()
@@ -81,16 +71,6 @@ async def create_church_livestream_channel(church_id: str):
     'church_id' is the church's streamID generated during church account creation in the onboarding.
     """
     return setup_church_livestream_channel(church_id)
-
-
-# Run Comments WebSocket server alongside FastAPI
-
-comment_websocket_server = CommentsWebsocketServer()
-
-@app.on_event("startup")
-async def start_comments_websockets():
-    """Start Tornado WebSocket server when FastAPI starts."""
-    await comment_websocket_server.start()
 
 
 # @app.websocket("/ws/{topic}")

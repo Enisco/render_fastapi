@@ -22,7 +22,7 @@ from livestream import (
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
 from webhook_handler import handle_webhook_event
-from comments_websocket.comments_socket import initialize_comments_socket
+from comments_websocket.comments_socket import CommentsWebsocketServer, initialize_comments_socket
 
 
 app = FastAPI()
@@ -84,14 +84,16 @@ async def create_church_livestream_channel(church_id: str):
 
 
 # Run Comments WebSocket server alongside FastAPI
+
+comment_websocket_server = CommentsWebsocketServer()
+
 @app.on_event("startup")
 async def start_comments_websockets():
-    """Start Comments WebSocket server."""
-    server = tornado.httpserver.HTTPServer(initialize_comments_socket())
-    server.listen(8000)
-    print("Comments WebSocket server running on ws://localhost:8000/ws/{topic}")
+    """Start Tornado WebSocket server when FastAPI starts."""
+    await comment_websocket_server.start()
 
-@app.websocket("/ws/{topic}")
-async def websocket_endpoint(websocket: WebSocket, topic: str):
-    print("Topic received from client: ", topic)
-    await websocket.accept()
+
+# @app.websocket("/ws/{topic}")
+# async def websocket_endpoint(websocket: WebSocket, topic: str):
+#     print("Topic received from client: ", topic)
+#     await websocket.accept()

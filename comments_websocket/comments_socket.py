@@ -2,12 +2,14 @@
 import json
 import tornado
 import tornado.websocket
+import tornado.web
 import tornado.ioloop
 import tornado.httpserver
-from fastapi import FastAPI
 from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import asyncio
+import json
 
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
@@ -62,3 +64,18 @@ def initialize_comments_socket():
     return tornado.web.Application([
         (r"/ws/([^/]+)", WebSocketHandler),
     ])
+
+websocket_app = initialize_comments_socket()
+
+# ** Tornado Server Management for FastAPI **
+class CommentsWebsocketServer:
+    def __init__(self):
+        self.loop = asyncio.get_event_loop()
+        self.server = None
+
+    async def start(self):
+        """Start Tornado WebSocket server within FastAPI's event loop."""
+        print("Starting Tornado WebSocket server...")
+        self.server = tornado.httpserver.HTTPServer(websocket_app)
+        self.server.listen(8000) 
+        

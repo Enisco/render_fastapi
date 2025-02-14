@@ -73,12 +73,6 @@ async def create_church_livestream_channel(church_id: str):
     return setup_church_livestream_channel(church_id)
 
 
-# @app.websocket("/ws/{topic}")
-# async def websocket_endpoint(websocket: WebSocket, topic: str):
-#     print("Topic received from client: ", topic)
-#     await websocket.accept()
-
-# Create an instance of WebSocketHandler
 manager = WebSocketHandler()
 
 @app.websocket("/ws/{topic}")

@@ -1,9 +1,20 @@
-from fastapi import FastAPI, Request, WebSocketDisconnect, UploadFile, File, Depends, HTTPException, Security
+import os
+from fastapi import (
+    FastAPI,
+    Request,
+    WebSocketDisconnect,
+    UploadFile,
+    File,
+    Depends,
+    HTTPException,
+    Security,
+)
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import json
 
 from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 from devotionals_service.devotional_service import process_devotional_document
 from livestream import (
@@ -54,10 +65,7 @@ async def receive_webhook_event(request: Request):
     return {"message": "Webhook received successfully"}
 
 
-@app.get(
-    "/user/get_token/{user_id}",
-    # response_model=GetTokenResponse,
-)
+@app.get("/user/get_token/{user_id}")
 async def generate_token(user_id: str):
     """
     Generate a livestream token for a user.
@@ -107,6 +115,7 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
 
 # Bulk devotional upload endpoint
 
+
 @app.post("/devotional/upload_doc/{church_id}")
 async def upload_file(
     church_id: str,
@@ -130,6 +139,11 @@ async def upload_file(
         return admonitions_data
     except json.JSONDecodeError as e:
         return {"error": f"Error parsing response: {str(e)}"}
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))  # Use the PORT environment variable
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 
 # python -m venv venv

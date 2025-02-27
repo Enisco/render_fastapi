@@ -124,13 +124,16 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
 # Bulk devotional upload endpoint
 
 
-@app.post("/devotional/upload_doc/{church_id}")
+@app.post("church/devotional/upload_doc/{church_id}")
 async def upload_file(
     church_id: str,
     file: UploadFile = File(...),
     credentials: HTTPAuthorizationCredentials = Security(security),
 ):
-    """Handle file upload, extract text, and return structured devotionals."""
+    """
+    Upload bulk devotionals for a church, allows only PDF, Word doc/docx, and TXT file formats.
+    Handle file upload, extract text, and return structured devotionals, eacg containing the date, title, amd content of each devotional.
+    """
 
     token = credentials.credentials
     print(f"Received file for church {church_id}")

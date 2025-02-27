@@ -26,6 +26,14 @@ from models.user_token_model import GetTokenResponse
 from webhook_handler import handle_webhook_event
 from comments_websocket.comments_socket import WebSocketHandler
 
+import sys
+import subprocess
+
+# Ensure python-multipart is installed
+try:
+    import multipart
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-multipart"])
 
 app = FastAPI()
 

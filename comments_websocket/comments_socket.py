@@ -29,3 +29,13 @@ class WebSocketHandler:
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:
                 await connection.send_text(json.dumps({"broadcast": message}))
+
+    async def save_comment_in_database(self, topic: str, message: str):
+        """Save the message in the Databse on GTube backend."""
+        try:
+            if topic in self.active_connections:
+                for connection in self.active_connections[topic]:
+                    await connection.send_text(json.dumps({"broadcast": message}))
+
+        except Exception as error:
+            print("Error occured: ", error)

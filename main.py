@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Request, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocketDisconnect, UploadFile, File, Depends, HTTPException, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import json
 
-from fastapi import FastAPI
 from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
+from devotionals_service.devotional_service import process_devotional_document
 from livestream import (
     get_user_token,
     setup_church_livestream_channel,
@@ -16,6 +17,9 @@ from comments_websocket.comments_socket import WebSocketHandler
 
 
 app = FastAPI()
+
+# Initialize HTTPBearer for receiving tokens
+security = HTTPBearer()
 
 
 # To allow CORS for frontend applications
@@ -73,14 +77,17 @@ async def create_church_livestream_channel(church_id: str):
     return setup_church_livestream_channel(church_id)
 
 
+# Chat Websocket endpoint
+
 manager = WebSocketHandler()
+
 
 @app.websocket("/ws/{topic}")
 async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
     """FastAPI WebSocket route that interacts with WebSocketHandler."""
-    
+
     print("Topic received from client: ", topic)
-    
+
     await manager.connect(websocket, topic)
     try:
         while True:
@@ -96,3 +103,38 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, topic)
+
+
+# Bulk devotional upload endpoint
+
+@app.post("/devotional/upload_doc/{church_id}")
+async def upload_file(
+    church_id: str,
+    file: UploadFile = File(...),
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    """Handle file upload, extract text, and return structured devotionals."""
+
+    token = credentials.credentials
+    print(f"Received file for church {church_id}")
+    print(f"Token received: {token}")
+
+    # Dummy function to process document (Replace with actual logic)
+    def process_devotional_document(filename):
+        return json.dumps({"message": f"Processed file: {filename}", "token": token})
+
+    response = process_devotional_document(file.filename)
+
+    try:
+        admonitions_data = json.loads(response)
+        return admonitions_data
+    except json.JSONDecodeError as e:
+        return {"error": f"Error parsing response: {str(e)}"}
+
+
+# python -m venv venv
+# venv\Scripts\activate
+# pip freeze > requirements.txt
+
+# deepseek_ai_api_key = 'sk-630b91e4926e42b7b1eb097ffe5a4c02'
+# gemini_ai_api_key = 'AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU'

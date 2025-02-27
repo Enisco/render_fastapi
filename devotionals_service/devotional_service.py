@@ -96,5 +96,5 @@ def process_local_devotional_file(file_path):
 # Example Usage
 # file_path = "tube_devo_test1.docx"
 # file_path = "tube_devo_test1.pdf"
-file_path = "RHAPSODY_OF_REALITIES_DECEMBER_2024.pdf"
-process_local_devotional_file(file_path)
+# file_path = "RHAPSODY_OF_REALITIES_DECEMBER_2024.pdf"
+# process_local_devotional_file(file_path)

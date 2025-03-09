@@ -1,6 +1,6 @@
 import time
-from fastapi import requests
 import stream
+import requests
 
 from getstream import Stream
 from getstream.models import CallRequest, CallSettingsRequest

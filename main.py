@@ -16,15 +16,13 @@ from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from comments_websocket_service.comments_socket import WebSocketHandler
 from devotionals_service.devotional_service import process_devotional_document
-from livestream import (
-    get_user_token,
-    setup_church_livestream_channel,
-)
+
+from livestream_service.livestream import get_user_token, setup_church_livestream_channel
+from livestream_service.webhook_handler import handle_webhook_event
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
-from webhook_handler import handle_webhook_event
-from comments_websocket.comments_socket import WebSocketHandler
 
 import sys
 import subprocess
@@ -132,7 +130,7 @@ async def upload_file(
 ):
     """
     Upload bulk devotionals for a church, allows only PDF, Word doc/docx, and TXT file formats.
-    Handle file upload, extract text, and return structured devotionals, eacg containing the date, title, amd content of each devotional.
+    Handle file upload, extract text, and return structured devotionals, each containing the date, title, bible verse amd content of each devotional.
     """
 
     token = credentials.credentials

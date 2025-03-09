@@ -1,6 +1,6 @@
 from typing import Any
 
-from livestream import end_session, start_session, upload_recording
+from livestream_service.livestream import end_session, start_session, upload_recording
 from models.call_session_model import session_json_to_model
 from models.participant_model import participant_json_to_model
 

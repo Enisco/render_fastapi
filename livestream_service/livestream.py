@@ -1,4 +1,5 @@
 import time
+from fastapi import requests
 import stream
 
 from getstream import Stream
@@ -12,11 +13,13 @@ api_key = "gcwwb5wde69h"
 api_secret = "mdmaxcad9yqbvp39yc45h39b2ebjcjwzu7pevfpnk7jnxa4dnkvraxpntc643ztm"
 
 call_type = "livestream"
-# admin_call_role = 'gtubeadmin'
 admin_call_role = "admin"
 user_call_role = "user"
 live_recording_storage = "stream-s3"
 
+main_backend_base_url = "https://uat.gospeltube.tv"
+start_live_session_endpoint = "/api/v1/church/videos/live"
+end_live_session_endpoint = "/api/v1/church/videos/end-live-stream"
 
 # ----------------------- Generate Token for User --------------------------
 
@@ -119,7 +122,19 @@ def start_session(call_id: str):
             recording_external_storage=live_recording_storage,
         )
         print("\n Recording Started: ", startRecording.data)
-        # TODO: Call endpoint to update event on Backend
+
+        # Call endpoint to update event on the Main Backend
+        data = {"callId": call_id}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+        }
+        response = requests.post(
+            main_backend_base_url + start_live_session_endpoint,
+            json=data,
+            headers=headers,
+        )
+        print(f"Start Live Session Response: \n", response)
 
     except Exception as error:
         print("\n\n Error going live call: ", error)
@@ -148,7 +163,6 @@ def end_session(call_id):
 
 def upload_recording(call_id):
     try:
-        # time.sleep(30)  # Delay for 30 seconds
         client = Stream(api_key=api_key, api_secret=api_secret)
         call = client.video.call(call_type=call_type, id=call_id)
 
@@ -157,7 +171,18 @@ def upload_recording(call_id):
         recording_url = f"https://gospeltube533267336299.s3.us-east-2.amazonaws.com/{live_recording_storage}/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
         print("\n\n ------ Recordings URL: ", recording_url)
 
-        # TODO: Call endpoint to upload recorded livestream here
+        # Call endpoint to end session and upload recorded livestream on the Main Backend
+        data = {"callId": call_id, "recordingUrl": recording_url}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+        }
+        response = requests.put(
+            main_backend_base_url + end_live_session_endpoint,
+            json=data,
+            headers=headers,
+        )
+        print(f"End Live Session Response: \n", response)
 
     except Exception as error:
         handle_exception(error)

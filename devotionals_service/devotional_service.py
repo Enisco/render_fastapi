@@ -57,7 +57,7 @@ def process_with_gemini(text):
     return response.text
 
 
-def process_devotional_document(file_path):
+def process_devotional_document(file_path, auth_token):
     """Process the received PDF or DOCX file and extract structured devotionals"""
 
     if file_path.endswith(".pdf"):
@@ -73,25 +73,24 @@ def process_devotional_document(file_path):
     print(f"\ndevotional response: {response}:")
     return response
 
+# def process_local_devotional_file(file_path):
+#     """Process a local PDF or DOCX file and extract structured devotionals"""
+#     if not os.path.exists(file_path):
+#         print(f"Error: File '{file_path}' not found!")
+#         return
 
-def process_local_devotional_file(file_path):
-    """Process a local PDF or DOCX file and extract structured devotionals"""
-    if not os.path.exists(file_path):
-        print(f"Error: File '{file_path}' not found!")
-        return
+#     if file_path.endswith(".pdf"):
+#         text = extract_text_from_pdf(file_path)
+#     elif file_path.endswith(".docx"):
+#         text = extract_text_from_docx(file_path)
+#     else:
+#         print("Error: Unsupported file type")
+#         return
 
-    if file_path.endswith(".pdf"):
-        text = extract_text_from_pdf(file_path)
-    elif file_path.endswith(".docx"):
-        text = extract_text_from_docx(file_path)
-    else:
-        print("Error: Unsupported file type")
-        return
-
-    # Process extracted text with Gemini AI
-    response = process_with_gemini(text)
-    print(f"\ndevotional response: {response}:")
-    return response
+#     # Process extracted text with Gemini AI
+#     response = process_with_gemini(text)
+#     print(f"\ndevotional response: {response}:")
+#     return response
 
 
 # Example Usage

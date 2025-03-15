@@ -2,6 +2,7 @@ from fastapi import WebSocket
 import asyncio
 import json
 
+
 class WebSocketHandler:
     """Handles multiple WebSocket connections with FastAPI."""
 
@@ -18,7 +19,10 @@ class WebSocketHandler:
 
     def disconnect(self, websocket: WebSocket, topic: str):
         """Handle client disconnection and cleanup."""
-        if topic in self.active_connections and websocket in self.active_connections[topic]:
+        if (
+            topic in self.active_connections
+            and websocket in self.active_connections[topic]
+        ):
             self.active_connections[topic].remove(websocket)
             if not self.active_connections[topic]:  # Remove empty topics
                 del self.active_connections[topic]
@@ -33,9 +37,19 @@ class WebSocketHandler:
     async def save_comment_in_database(self, topic: str, message: str):
         """Save the message in the Databse on GTube backend."""
         try:
-            if topic in self.active_connections:
-                for connection in self.active_connections[topic]:
-                    await connection.send_text(json.dumps({"broadcast": message}))
+            print(f"Saving comment . . .: \n {message}")
+            # TODO: Call endpoint to save comment on the Main Backend
+            # data = {"callId": call_id}
+            # headers = {
+            #     "Content-Type": "application/json",
+            #     "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+            # }
+            # response = requests.post(
+            #     main_backend_base_url + start_live_session_endpoint,
+            #     json=data,
+            #     headers=headers,
+            # )
+            # print(f"Saving comment . . .: \n")
 
         except Exception as error:
             print("Error occured: ", error)

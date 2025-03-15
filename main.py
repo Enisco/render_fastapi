@@ -123,7 +123,7 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
 
 
 @app.post("church/devotional/upload_doc/{church_id}")
-async def upload_file(
+async def upload_bulk_devotional(
     church_id: str,
     file: UploadFile = File(...),
     credentials: HTTPAuthorizationCredentials = Security(security),
@@ -137,17 +137,13 @@ async def upload_file(
     print(f"Received file for church {church_id}")
     print(f"Token received: {token}")
 
-    # Dummy function to process document (Replace with actual logic)
-    def process_devotional_document(filename):
-        return json.dumps({"message": f"Processed file: {filename}", "token": token})
-
     response = process_devotional_document(file.filename)
 
     try:
         admonitions_data = json.loads(response)
         return admonitions_data
     except json.JSONDecodeError as e:
-        return {"error": f"Error parsing response: {str(e)}"}
+        return {"error": f"Error parsing response: {str(e)}: {response}"}
 
 
 if __name__ == "__main__":

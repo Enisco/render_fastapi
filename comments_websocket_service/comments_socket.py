@@ -56,6 +56,10 @@ class WebSocketHandler:
 
     async def send_message(self, topic: str, message: str):
         """Broadcast a message to all clients subscribed to a topic."""
+
+        # Save message to GTube Main Database 
+        print("Save comment and broadcast")
+        save_comment_in_database(topic, message)
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:
                 await connection.send_text(json.dumps({"broadcast": message}))

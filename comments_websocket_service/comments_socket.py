@@ -2,7 +2,7 @@ from fastapi import WebSocket
 import asyncio
 import json
 
-async def save_comment_in_database(topic, data_string):
+def save_comment_in_database(topic, data_string):
     """Save the message in the Databse on GTube backend."""
     print(f"Saving comment . . .")
     try:

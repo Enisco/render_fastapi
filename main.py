@@ -113,7 +113,7 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
             # await websocket.send_text(ack_message)
 
             # Save message to GTube Main Database 
-            await save_comment_in_database(topic, data)
+            save_comment_in_database(topic, data)
 
             # Broadcast message to all clients in the topic
             await manager.send_message(topic, data)

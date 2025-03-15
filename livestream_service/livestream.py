@@ -127,7 +127,7 @@ def start_session(call_id: str):
         data = {"callId": call_id}
         headers = {
             "Content-Type": "application/json",
-            "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+            # "Authorization": "Bearer YOUR_ACCESS_TOKEN",
         }
         response = requests.post(
             main_backend_base_url + start_live_session_endpoint,
@@ -175,7 +175,7 @@ def upload_recording(call_id):
         data = {"callId": call_id, "recordingUrl": recording_url}
         headers = {
             "Content-Type": "application/json",
-            "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+            # "Authorization": "Bearer YOUR_ACCESS_TOKEN",
         }
         response = requests.put(
             main_backend_base_url + end_live_session_endpoint,

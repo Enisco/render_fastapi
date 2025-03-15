@@ -4,14 +4,14 @@ import json
 
 def save_comment_in_database(topic, data_string):
     """Save the message in the Databse on GTube backend."""
-    print(f"Saving comment . . .")
+    print(f"Saving comment . . .", flush=True)
     try:
-        print(f"Extracting comment properties. . .")
+        print(f"Extracting comment properties. . .", flush=True)
         dataJson =  json.loads(data_string)
         message = dataJson.get('message')
         bearer_token = dataJson.get('bearer_token')
 
-        print(f"Saving comment . . . \n topic: {topic} \n message: {message} \n bearer_token: {bearer_token}")
+        print(f"Saving comment . . . \n topic: {topic} \n message: {message} \n bearer_token: {bearer_token}", flush=True)
         # TODO: Call endpoint to save comment on the Main Backend
         # data = {"callId": call_id}
         # headers = {
@@ -58,7 +58,7 @@ class WebSocketHandler:
         """Broadcast a message to all clients subscribed to a topic."""
 
         # Save message to GTube Main Database 
-        print("Save comment and broadcast")
+        print("Save comment and broadcast", flush=True)
         save_comment_in_database(topic, message)
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:

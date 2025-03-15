@@ -2,7 +2,7 @@ from fastapi import WebSocket
 import asyncio
 import json
 
-async def save_comment_in_database(self, topic: str, data_string: str):
+async def save_comment_in_database(topic, data_string):
     """Save the message in the Databse on GTube backend."""
     print(f"Saving comment . . .")
     try:
@@ -11,7 +11,7 @@ async def save_comment_in_database(self, topic: str, data_string: str):
         message = dataJson.get('message')
         bearer_token = dataJson.get('bearer_token')
 
-        print(f"Saving comment . . . \n message: {message} \n bearer_token: {bearer_token}")
+        print(f"Saving comment . . . \n topic: {topic} \n message: {message} \n bearer_token: {bearer_token}")
         # TODO: Call endpoint to save comment on the Main Backend
         # data = {"callId": call_id}
         # headers = {

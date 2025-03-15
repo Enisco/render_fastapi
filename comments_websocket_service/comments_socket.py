@@ -2,6 +2,32 @@ from fastapi import WebSocket
 import asyncio
 import json
 
+async def save_comment_in_database(self, topic: str, data_string: str):
+    """Save the message in the Databse on GTube backend."""
+    print(f"Saving comment . . .")
+    try:
+        print(f"Extracting comment properties. . .")
+        dataJson =  json.loads(data_string)
+        message = dataJson.get('message')
+        bearer_token = dataJson.get('bearer_token')
+
+        print(f"Saving comment . . . \n message: {message} \n bearer_token: {bearer_token}")
+        # TODO: Call endpoint to save comment on the Main Backend
+        # data = {"callId": call_id}
+        # headers = {
+        #     "Content-Type": "application/json",
+        #     "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+        # }
+        # response = requests.post(
+        #     main_backend_base_url + start_live_session_endpoint,
+        #     json=data,
+        #     headers=headers,
+        # )
+        # print(f"Saving comment . . .: \n")
+    
+    except Exception as error:
+        print("Error occured: ", error)
+
 
 class WebSocketHandler:
     """Handles multiple WebSocket connections with FastAPI."""
@@ -33,27 +59,3 @@ class WebSocketHandler:
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:
                 await connection.send_text(json.dumps({"broadcast": message}))
-
-    async def save_comment_in_database(self, topic: str, data_string: str):
-        """Save the message in the Databse on GTube backend."""
-        try:
-            dataJson =  json.loads(data_string)
-            message = dataJson.get('message')
-            bearer_token = dataJson.get('bearer_token')
-
-            print(f"Saving comment . . . \n message: {message} \n bearer_token: {bearer_token}")
-            # TODO: Call endpoint to save comment on the Main Backend
-            # data = {"callId": call_id}
-            # headers = {
-            #     "Content-Type": "application/json",
-            #     "Authorization": "Bearer YOUR_ACCESS_TOKEN",
-            # }
-            # response = requests.post(
-            #     main_backend_base_url + start_live_session_endpoint,
-            #     json=data,
-            #     headers=headers,
-            # )
-            # print(f"Saving comment . . .: \n")
-
-        except Exception as error:
-            print("Error occured: ", error)

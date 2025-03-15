@@ -16,7 +16,7 @@ from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from comments_websocket_service.comments_socket import WebSocketHandler
+from comments_websocket_service.comments_socket import WebSocketHandler, save_comment_in_database
 from devotionals_service.devotional_service import process_devotional_document
 
 from livestream_service.livestream import get_user_token, setup_church_livestream_channel
@@ -113,7 +113,7 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
             # await websocket.send_text(ack_message)
 
             # Save message to GTube Main Database 
-            await manager.save_comment_in_database(topic, data)
+            save_comment_in_database(topic, data)
 
             # Broadcast message to all clients in the topic
             await manager.send_message(topic, data)

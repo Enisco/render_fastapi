@@ -34,10 +34,14 @@ class WebSocketHandler:
             for connection in self.active_connections[topic]:
                 await connection.send_text(json.dumps({"broadcast": message}))
 
-    async def save_comment_in_database(self, topic: str, message: str):
+    async def save_comment_in_database(self, topic: str, data_string: str):
         """Save the message in the Databse on GTube backend."""
         try:
-            print(f"Saving comment . . .: \n {message}")
+            dataJson =  json.loads(data_string)
+            message = dataJson.get('message')
+            bearer_token = dataJson.get('bearer_token')
+
+            print(f"Saving comment . . . \n message: {message} \n bearer_token: {bearer_token}")
             # TODO: Call endpoint to save comment on the Main Backend
             # data = {"callId": call_id}
             # headers = {

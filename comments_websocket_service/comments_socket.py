@@ -7,12 +7,10 @@ import requests
 """
 {
     "bearer_token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzb2RlZXFlMDNAZ21haWwuY29tIiwicGVybWlzc2lvbnMiOiIiLCJyb2xlcyI6IlVTRVIiLCJpc3MiOiJzZWxmIiwiZXhwIjoxNzQ0NjkxNTQ0LCJpYXQiOjE3NDIwOTk1NDR9.MpDZyOIdEOOfAfBPXjwtWBSo9Fqk8ZLJ8nHEIM5nxSuSPh3CkOGSnaVyx-5oXFO9AVsGWR96Q-8RSNSA7O_edF-k7cFI05dt6zibpHpaMnwa_MeWwcT6oivSusg_9xKb_NHYXccKtbensa-VQbafO-f-_vGKz0Rqc7353O3OBHQJ0xZk6P2xw5rLe1h-0_OqVg9-0KIl-dDBLVl6atUFhdJiNjfuQMSM2v7NuxsuRzt5eaEJMQmJbUXTp5mopYOuRNulLAkeBkjpd-uIln2eGa8glT20IbbhS68ftO1_8rg5hs-PjCx-IwA5xQ-eoLGLD-4cPXNcxGwZow0U48Mszw",
-    "comment_data": {
-      "comment": "Good song, inspirational and soothing",
-      "videoId": 22,
-      "seriesId": 15,
-      "churchId": 27
-    }
+    "comment": "Good song, inspirational and soothing",
+    "videoId": 22,
+    "seriesId": 15,
+    "churchId": 27
 }
 """
 
@@ -26,12 +24,20 @@ def save_comment_in_database(topic, data_string):
     try:
         print(f"Extracting comment properties. . .", flush=True)
         dataJson =  json.loads(data_string)
-        comment_data = dataJson.get('comment_data')
+        comment_string = dataJson.get('comment')
+        video_id = dataJson.get('videoId')
+        series_id = dataJson.get('seriesId')
+        church_id = dataJson.get('churchId')
         bearer_token = dataJson.get('bearer_token')
 
         # Call endpoint to save comment on the Main Backend
-        data = json.dumps(comment_data)
         bearer_token = bearer_token.strip()
+        data = {
+            "comment": comment_string,
+            "videoId": video_id,
+            "seriesId": series_id,
+            "churchId": church_id
+        }
         print(f"Saving comment . . . \n topic: {topic} \n comment_data: {data} \n bearer_token: {bearer_token}", flush=True)
 
         headers = {

@@ -35,7 +35,7 @@ def save_comment_in_database(topic, data_string):
         data = json.dumps(comment_data)
         headers = {
             "Content-Type": "application/json",
-            "Authorization": "Bearer {bearer_token}",
+            "Authorization": f"  {bearer_token}",
         }
 
         endpoint = main_backend_base_url + post_comment_endpoint

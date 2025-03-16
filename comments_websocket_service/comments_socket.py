@@ -6,7 +6,7 @@ import requests
 
 """
 {
-    "bearer_token": "tfgh456c86ggghhjkj",
+    "bearer_token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzb2RlZXFlMDNAZ21haWwuY29tIiwicGVybWlzc2lvbnMiOiIiLCJyb2xlcyI6IlVTRVIiLCJpc3MiOiJzZWxmIiwiZXhwIjoxNzQ0NjkxNTQ0LCJpYXQiOjE3NDIwOTk1NDR9.MpDZyOIdEOOfAfBPXjwtWBSo9Fqk8ZLJ8nHEIM5nxSuSPh3CkOGSnaVyx-5oXFO9AVsGWR96Q-8RSNSA7O_edF-k7cFI05dt6zibpHpaMnwa_MeWwcT6oivSusg_9xKb_NHYXccKtbensa-VQbafO-f-_vGKz0Rqc7353O3OBHQJ0xZk6P2xw5rLe1h-0_OqVg9-0KIl-dDBLVl6atUFhdJiNjfuQMSM2v7NuxsuRzt5eaEJMQmJbUXTp5mopYOuRNulLAkeBkjpd-uIln2eGa8glT20IbbhS68ftO1_8rg5hs-PjCx-IwA5xQ-eoLGLD-4cPXNcxGwZow0U48Mszw",
     "comment_data": {
       "comment": "Good song, inspirational and soothing",
       "videoId": 22,
@@ -21,7 +21,7 @@ post_comment_endpoint = "/api/v1/user/videos/comment"
 
 
 def save_comment_in_database(topic, data_string):
-    """Save the message in the Databse on GTube backend."""
+    """Save the message in the Databsse on GTube's main backend."""
     print(f"Saving comment . . .", flush=True)
     try:
         print(f"Extracting comment properties. . .", flush=True)
@@ -41,10 +41,11 @@ def save_comment_in_database(topic, data_string):
         endpoint = main_backend_base_url + post_comment_endpoint
         response = requests.post(
             endpoint,
-            json = data,
+            json = json.dumps(data),
             headers = headers,
         )
         print(f"Save comment response: {response}", flush=True)
+        print("", flush=True)
     
     except Exception as error:
         print("Error occured: ", error)

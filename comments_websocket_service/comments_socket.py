@@ -35,7 +35,7 @@ def save_comment_in_database(topic, data_string):
         print(f"Saving comment . . . \n topic: {topic} \n comment_data: {data} \n bearer_token: {bearer_token}", flush=True)
 
         headers = {
-            # "Content-Type": "application/json",
+            "Content-Type": "application/json",
             "Authorization": f"Bearer {bearer_token}",
         }
 
@@ -45,7 +45,13 @@ def save_comment_in_database(topic, data_string):
             json = data,
             headers = headers,
         )
-        print(f"Save comment response: {response.json}", flush=True)
+        print(f"Save comment response: {response.text}", flush=True)
+        try:
+            json_data = response.json()
+            print(f"JSON Response: {json_data}", flush=True)
+        except ValueError:
+            print("Response is not in JSON format")
+
         print("Done saving comment", flush=True)
     
     except Exception as error:

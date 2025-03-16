@@ -29,11 +29,10 @@ def save_comment_in_database(topic, data_string):
         comment_data = dataJson.get('comment_data')
         bearer_token = dataJson.get('bearer_token')
 
-        print(f"Saving comment . . . \n topic: {topic} \n comment_data: {comment_data} \n bearer_token: {bearer_token}", flush=True)
-        
         # Call endpoint to save comment on the Main Backend
         data = json.dumps(comment_data)
         bearer_token = bearer_token.strip()
+        print(f"Saving comment . . . \n topic: {topic} \n comment_data: {data} \n bearer_token: {bearer_token}", flush=True)
 
         headers = {
             "Content-Type": "application/json",
@@ -46,7 +45,7 @@ def save_comment_in_database(topic, data_string):
             json = data,
             headers = headers,
         )
-        print(f"Save comment response: {response}", flush=True)
+        print(f"Save comment response: {response.json}", flush=True)
         print("Done saving comment", flush=True)
     
     except Exception as error:

@@ -33,9 +33,11 @@ def save_comment_in_database(topic, data_string):
         
         # Call endpoint to save comment on the Main Backend
         data = json.dumps(comment_data)
+        bearer_token = bearer_token.strip()
+
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"  {bearer_token}",
+            "Authorization": f"Bearer {bearer_token}",
         }
 
         endpoint = main_backend_base_url + post_comment_endpoint

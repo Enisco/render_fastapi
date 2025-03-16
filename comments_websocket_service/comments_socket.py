@@ -47,7 +47,7 @@ def save_comment_in_database(topic, data_string):
             headers = headers,
         )
         print(f"Save comment response: {response}", flush=True)
-        print("", flush=True)
+        print("Done saving comment", flush=True)
     
     except Exception as error:
         print("Error occured: ", error)

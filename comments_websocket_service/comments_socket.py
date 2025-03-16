@@ -35,7 +35,7 @@ def save_comment_in_database(topic, data_string):
         print(f"Saving comment . . . \n topic: {topic} \n comment_data: {data} \n bearer_token: {bearer_token}", flush=True)
 
         headers = {
-            "Content-Type": "application/json",
+            # "Content-Type": "application/json",
             "Authorization": f"Bearer {bearer_token}",
         }
 

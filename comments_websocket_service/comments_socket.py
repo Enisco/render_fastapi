@@ -2,28 +2,49 @@ from fastapi import WebSocket
 import asyncio
 import json
 
+import requests
+
+"""
+{
+    "bearer_token": "tfgh456c86ggghhjkj",
+    "comment_data": {
+      "comment": "Good song, inspirational and soothing",
+      "videoId": 22,
+      "seriesId": 15,
+      "churchId": 27
+    }
+}
+"""
+
+main_backend_base_url = "https://uat.gospeltube.tv"
+post_comment_endpoint = "/api/v1/user/videos/comment"
+
+
 def save_comment_in_database(topic, data_string):
     """Save the message in the Databse on GTube backend."""
     print(f"Saving comment . . .", flush=True)
     try:
         print(f"Extracting comment properties. . .", flush=True)
         dataJson =  json.loads(data_string)
-        message = dataJson.get('message')
+        comment_data = dataJson.get('comment_data')
         bearer_token = dataJson.get('bearer_token')
 
-        print(f"Saving comment . . . \n topic: {topic} \n message: {message} \n bearer_token: {bearer_token}", flush=True)
-        # TODO: Call endpoint to save comment on the Main Backend
-        # data = {"callId": call_id}
-        # headers = {
-        #     "Content-Type": "application/json",
-        #     "Authorization": "Bearer YOUR_ACCESS_TOKEN",
-        # }
-        # response = requests.post(
-        #     main_backend_base_url + start_live_session_endpoint,
-        #     json=data,
-        #     headers=headers,
-        # )
-        # print(f"Saving comment . . .: \n")
+        print(f"Saving comment . . . \n topic: {topic} \n comment_data: {comment_data} \n bearer_token: {bearer_token}", flush=True)
+        
+        # Call endpoint to save comment on the Main Backend
+        data = json.loads(comment_data)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer {bearer_token}",
+        }
+
+        endpoint = main_backend_base_url + post_comment_endpoint
+        response = requests.post(
+            endpoint,
+            json = data,
+            headers = headers,
+        )
+        print(f"Save comment response: {response}", flush=True)
     
     except Exception as error:
         print("Error occured: ", error)

@@ -21,6 +21,7 @@ main_backend_base_url = "https://uat.gospeltube.tv"
 start_live_session_endpoint = "/api/v1/church/videos/live"
 end_live_session_endpoint = "/api/v1/church/videos/end-live-stream"
 
+
 # ----------------------- Generate Token for User --------------------------
 
 
@@ -127,10 +128,11 @@ def start_session(call_id: str):
         data = {"callId": call_id}
         headers = {
             "Content-Type": "application/json",
-            # "Authorization": "Bearer YOUR_ACCESS_TOKEN",
         }
+
+        endpoint = main_backend_base_url + start_live_session_endpoint
         response = requests.post(
-            main_backend_base_url + start_live_session_endpoint,
+            endpoint,
             json=data,
             headers=headers,
         )
@@ -175,10 +177,11 @@ def upload_recording(call_id):
         data = {"callId": call_id, "recordingUrl": recording_url}
         headers = {
             "Content-Type": "application/json",
-            # "Authorization": "Bearer YOUR_ACCESS_TOKEN",
         }
+
+        endpoint = main_backend_base_url + end_live_session_endpoint,
         response = requests.put(
-            main_backend_base_url + end_live_session_endpoint,
+            endpoint,
             json=data,
             headers=headers,
         )

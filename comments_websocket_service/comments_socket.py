@@ -41,7 +41,7 @@ def save_comment_in_database(topic, data_string):
         endpoint = main_backend_base_url + post_comment_endpoint
         response = requests.post(
             endpoint,
-            json = data
+            json = data,
             headers = headers,
         )
         print(f"Save comment response: {response}", flush=True)

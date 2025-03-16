@@ -32,7 +32,7 @@ def save_comment_in_database(topic, data_string):
         print(f"Saving comment . . . \n topic: {topic} \n comment_data: {comment_data} \n bearer_token: {bearer_token}", flush=True)
         
         # Call endpoint to save comment on the Main Backend
-        data = json.loads(comment_data)
+        data = json.dumps(comment_data)
         headers = {
             "Content-Type": "application/json",
             "Authorization": "Bearer {bearer_token}",
@@ -41,7 +41,7 @@ def save_comment_in_database(topic, data_string):
         endpoint = main_backend_base_url + post_comment_endpoint
         response = requests.post(
             endpoint,
-            json = json.dumps(data),
+            json = data
             headers = headers,
         )
         print(f"Save comment response: {response}", flush=True)

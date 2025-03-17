@@ -132,7 +132,7 @@ def start_session(call_id: str):
 
         endpoint = main_backend_base_url + start_live_session_endpoint
         response = requests.post(
-            endpoint,
+            "https://uat.gospeltube.tv/api/v1/church/videos/live",
             json=data,
             headers=headers,
         )
@@ -140,7 +140,6 @@ def start_session(call_id: str):
         print("Done starting session", flush=True)
 
     except Exception as error:
-        print("\n\n Error going live call: ", error)
         handle_exception(error)
 
 
@@ -182,7 +181,7 @@ def upload_recording(call_id):
 
         endpoint = main_backend_base_url + end_live_session_endpoint,
         response = requests.put(
-            endpoint,
+            "https://uat.gospeltube.tv/api/v1/church/videos/end-live-stream",
             json=data,
             headers=headers,
         )

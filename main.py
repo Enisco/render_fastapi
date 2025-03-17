@@ -16,7 +16,7 @@ from starlette.websockets import WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from comments_websocket_service.comments_socket import WebSocketHandler, save_comment_in_database
+from comments_websocket_service.comments_socket import WebSocketHandler
 from devotionals_service.devotional_service import process_devotional_document
 
 from livestream_service.livestream import get_user_token, setup_church_livestream_channel

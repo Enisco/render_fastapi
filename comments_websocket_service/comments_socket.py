@@ -18,27 +18,11 @@ main_backend_base_url = "https://uat.gospeltube.tv"
 post_comment_endpoint = "/api/v1/user/videos/comment"
 
 
-def save_comment_in_database(topic, data_string):
+def save_comment_in_database(bearer_token, data_json):
     """Save the message in the Databsse on GTube's main backend."""
     print(f"Saving comment . . .", flush=True)
     try:
-        print(f"Extracting comment properties. . .", flush=True)
-        dataJson =  json.loads(data_string)
-        comment_string = dataJson.get('comment')
-        video_id = dataJson.get('videoId')
-        series_id = dataJson.get('seriesId')
-        church_id = dataJson.get('churchId')
-        bearer_token = dataJson.get('bearer_token')
-
-        # Call endpoint to save comment on the Main Backend
-        bearer_token = bearer_token.strip()
-        data = {
-            "comment": comment_string,
-            "videoId": video_id,
-            "seriesId": series_id,
-            "churchId": church_id
-        }
-        print(f"Saving comment . . . \n topic: {topic} \n comment_data: {data} \n bearer_token: {bearer_token}", flush=True)
+        print(f"Saving comment . . . \n comment_data: {data_json} \n bearer_token: {bearer_token}", flush=True)
 
         headers = {
             "Content-Type": "application/json",
@@ -48,7 +32,7 @@ def save_comment_in_database(topic, data_string):
         endpoint = main_backend_base_url + post_comment_endpoint
         response = requests.post(
             endpoint,
-            json = data,
+            json = data_json,
             headers = headers,
         )
         print(f"Save comment response: {response.text}", flush=True)
@@ -92,9 +76,25 @@ class WebSocketHandler:
     async def send_message(self, topic: str, message: str):
         """Broadcast a message to all clients subscribed to a topic."""
 
-        # Save message to GTube Main Database 
-        print("Save comment and broadcast", flush=True)
-        save_comment_in_database(topic, message)
+        print(f"Extracting comment properties. . .", flush=True)
+        dataJson =  json.loads(message)
+        comment_string = dataJson.get('comment')
+        video_id = dataJson.get('videoId')
+        series_id = dataJson.get('seriesId')
+        church_id = dataJson.get('churchId')
+        bearer_token = dataJson.get('bearer_token')
+
+        # Extract comment data and create JSON object
+        bearer_token = bearer_token.strip()
+        comment_data = {
+            "comment": comment_string,
+            "videoId": video_id,
+            "seriesId": series_id,
+            "churchId": church_id
+        }
+
+        save_comment_in_database(bearer_token, comment_data)
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:
-                await connection.send_text(json.dumps({"broadcast": message}))
+                # await connection.send_text(json.dumps({"broadcast": message}))
+                await connection.send_text(comment_data)

@@ -135,8 +135,14 @@ def start_session(call_id: str):
             "https://uat.gospeltube.tv/api/v1/church/videos/live",
             json=data,
             headers=headers,
-        )
-        print(f"Start Live Session Response: \n", response.text, flush=True)
+        )        
+        print(f"Start Live Session Response: \n {response}  \n {response.text}", flush=True)
+        try:
+            json_data = response.json()
+            print(f"JSON Response: {json_data}", flush=True)
+        except ValueError:
+            print("Response is not in JSON format")
+
         print("Done starting session", flush=True)
 
     except Exception as error:
@@ -185,7 +191,13 @@ def upload_recording(call_id):
             json=data,
             headers=headers,
         )
-        print(f"End Live Session Response: \n", response.text, flush=True)
+        print(f"End Live Session Response: \n {response}  \n {response.text}", flush=True)
+        try:
+            json_data = response.json()
+            print(f"JSON Response: {json_data}", flush=True)
+        except ValueError:
+            print("Response is not in JSON format")
+
         print("Done ending session", flush=True)
 
     except Exception as error:

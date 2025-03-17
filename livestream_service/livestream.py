@@ -136,7 +136,8 @@ def start_session(call_id: str):
             json=data,
             headers=headers,
         )
-        print(f"Start Live Session Response: \n", response)
+        print(f"Start Live Session Response: \n", response.text, flush=True)
+        print("Done starting session", flush=True)
 
     except Exception as error:
         print("\n\n Error going live call: ", error)
@@ -176,7 +177,7 @@ def upload_recording(call_id):
         # Call endpoint to end session and upload recorded livestream on the Main Backend
         data = {"callId": call_id, "recordingUrl": recording_url}
         headers = {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
         }
 
         endpoint = main_backend_base_url + end_live_session_endpoint,
@@ -185,7 +186,8 @@ def upload_recording(call_id):
             json=data,
             headers=headers,
         )
-        print(f"End Live Session Response: \n", response)
+        print(f"End Live Session Response: \n", response.text, flush=True)
+        print("Done ending session", flush=True)
 
     except Exception as error:
         handle_exception(error)

@@ -78,6 +78,8 @@ class WebSocketHandler:
 
         print(f"Extracting comment properties. . .", flush=True)
         dataJson =  json.loads(message)
+        sender_name = dataJson.get('sender_name')
+        sender_profile_pic = dataJson.get('sender_profile_pic')
         comment_string = dataJson.get('comment')
         video_id = dataJson.get('videoId')
         series_id = dataJson.get('seriesId')
@@ -87,6 +89,8 @@ class WebSocketHandler:
         # Extract comment data and create JSON object
         bearer_token = bearer_token.strip()
         comment_data = {
+            "sender_name": sender_name,
+            "sender_profile_pic": sender_profile_pic,
             "comment": comment_string,
             "videoId": video_id,
             "seriesId": series_id,
@@ -97,4 +101,3 @@ class WebSocketHandler:
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:
                 await connection.send_text(json.dumps(comment_data))
-                # await connection.send_text(comment_data)

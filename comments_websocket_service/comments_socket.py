@@ -96,5 +96,5 @@ class WebSocketHandler:
         save_comment_in_database(bearer_token, comment_data)
         if topic in self.active_connections:
             for connection in self.active_connections[topic]:
-                # await connection.send_text(json.dumps({"broadcast": message}))
-                await connection.send_text(comment_data)
+                await connection.send_text(json.dumps(comment_data))
+                # await connection.send_text(comment_data)

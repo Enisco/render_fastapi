@@ -181,7 +181,8 @@ def upload_recording(call_id):
         print("\n\n ------ Recordings URL: ", recording_url)
 
         # Call endpoint to end session and upload recorded livestream on the Main Backend
-        data = {"callId": call_id, "recordingUrl": recording_url}
+        end_data = {"callId": call_id, "recordingUrl": recording_url}
+        print(f"End live data: {end_data}", flush=True)
         headers = {
             # "Content-Type": "application/json"
             "Content-Type": ""
@@ -190,7 +191,7 @@ def upload_recording(call_id):
         endpoint = main_backend_base_url + end_live_session_endpoint,
         response = requests.put(
             "https://uat.gospeltube.tv/api/v1/webhook/end-live-stream",
-            json=data,
+            json=end_data,
             headers=headers,
         )
         print(f"End Live Session Response: \n {response}  \n {response.text}", flush=True)

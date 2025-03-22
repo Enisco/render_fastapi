@@ -135,7 +135,7 @@ def start_session(call_id: str):
             # "https://uat.gospeltube.tv/api/v1/church/videos/live",
             endpoint,
             json=data,
-            headers=headers,
+            # headers=headers,
         )        
         print(f"Start Live Session Response: \n {response}  \n {response.text}", flush=True)
         try:
@@ -191,7 +191,7 @@ def upload_recording(call_id):
             # "https://uat.gospeltube.tv/api/v1/church/videos/end-live-stream",
             endpoint,
             json=data,
-            headers=headers,
+            # headers=headers,
         )
         print(f"End Live Session Response: \n {response}  \n {response.text}", flush=True)
         try:

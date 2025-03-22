@@ -127,14 +127,15 @@ def start_session(call_id: str):
         # Call endpoint to update event on the Main Backend
         data = {"callId": call_id}
         headers = {
-            "Content-Type": "application/json",
+            # "Content-Type": "application/json",
+            "Content-Type": ""
         }
 
         endpoint = main_backend_base_url + start_live_session_endpoint
         response = requests.post(
             "https://uat.gospeltube.tv/api/v1/webhook/church/videos/live",
             json=data,
-            # headers=headers,
+            headers=headers,
         )        
         print(f"Start Live Session Response: \n {response}  \n {response.text}", flush=True)
         try:
@@ -182,14 +183,15 @@ def upload_recording(call_id):
         # Call endpoint to end session and upload recorded livestream on the Main Backend
         data = {"callId": call_id, "recordingUrl": recording_url}
         headers = {
-            "Content-Type": "application/json"
+            # "Content-Type": "application/json"
+            "Content-Type": ""
         }
 
         endpoint = main_backend_base_url + end_live_session_endpoint,
         response = requests.put(
             "https://uat.gospeltube.tv/api/v1/webhook/end-live-stream",
             json=data,
-            # headers=headers,
+            headers=headers,
         )
         print(f"End Live Session Response: \n {response}  \n {response.text}", flush=True)
         try:

@@ -132,8 +132,7 @@ def start_session(call_id: str):
 
         endpoint = main_backend_base_url + start_live_session_endpoint
         response = requests.post(
-            # "https://uat.gospeltube.tv/api/v1/church/videos/live",
-            endpoint,
+            "https://uat.gospeltube.tv/api/v1/webhook/church/videos/live",
             json=data,
             # headers=headers,
         )        
@@ -188,8 +187,7 @@ def upload_recording(call_id):
 
         endpoint = main_backend_base_url + end_live_session_endpoint,
         response = requests.put(
-            # "https://uat.gospeltube.tv/api/v1/church/videos/end-live-stream",
-            endpoint,
+            "https://uat.gospeltube.tv/api/v1/webhook/end-live-stream",
             json=data,
             # headers=headers,
         )

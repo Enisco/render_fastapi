@@ -54,6 +54,41 @@ def root():
     return {"message": "Hello, from GTube Livestream server, with comments WebSocket"}
 
 
+@app.on_event("startup")
+async def startup_event():
+    # Initialize DynamoDB table if it doesn't exist
+    try:
+        dynamodb.create_table(
+            TableName=DYNAMODB_TABLE,
+            KeySchema=[
+                {
+                    'AttributeName': 'call_id',
+                    'KeyType': 'HASH'  # Partition key
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'call_id',
+                    'AttributeType': 'S'
+                }
+            ],
+            BillingMode='PAY_PER_REQUEST',
+            TimeToLiveSpecification={
+                'Enabled': True,
+                'AttributeName': 'ttl'
+            }
+        )
+        print(f"Table {DYNAMODB_TABLE} created successfully")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ResourceInUseException':
+            print(f"Table {DYNAMODB_TABLE} already exists")
+        else:
+            print(f"Error creating table: {e}")
+    
+    # Initialize grace periods from DynamoDB
+    initialize_grace_periods()
+
+
 @app.post("/receive_webhook")
 async def receive_webhook_event(request: Request):
     """
@@ -154,6 +189,3 @@ if __name__ == "__main__":
 # python -m venv venv
 # venv\Scripts\activate
 # pip freeze > requirements.txt
-
-# deepseek_ai_api_key = 'sk-630b91e4926e42b7b1eb097ffe5a4c02'
-# gemini_ai_api_key = 'AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU'

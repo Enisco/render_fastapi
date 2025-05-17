@@ -2,6 +2,24 @@ import time
 import stream
 import requests
 
+import asyncio
+import threading
+from typing import Dict
+from datetime import datetime, timedelta
+import boto3
+from botocore.exceptions import ClientError
+import uuid
+import os
+from typing import Optional
+
+# AWS Configuration
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
+DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
+
+# Initialize AWS clients
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+table = dynamodb.Table(DYNAMODB_TABLE)
+
 from getstream import Stream
 from getstream.models import CallRequest, CallSettingsRequest
 from getstream.models import RecordSettingsRequest
@@ -103,9 +121,11 @@ def setup_church_livestream_channel(church_id):
 
 # -------------- Start New Session: Go Live and Start Recording --------------
 
-
 def start_session(call_id: str):
     try:
+        # Check if there's a pending grace period for this call_id
+        check_and_cancel_grace_period(call_id)
+
         client = Stream(api_key=api_key, api_secret=api_secret)
 
         #  Go live. This allows viewers to join the call and watch
@@ -126,7 +146,6 @@ def start_session(call_id: str):
 
         # Call endpoint to update event on the Main Backend        
         headers = {
-            # "Content-Type": "application/json",
             "Content-Type": ""
         }
 
@@ -148,9 +167,138 @@ def start_session(call_id: str):
     except Exception as error:
         handle_exception(error)
 
+        
+# -------------- AWS DynamoDB Helper Functions --------------
+
+def check_and_cancel_grace_period(call_id: str) -> bool:
+    """
+    Check if there's a pending grace period for the given call_id and cancel it.
+    Returns True if a grace period was found and cancelled, False otherwise.
+    """
+    try:
+        # Try to get the grace period from DynamoDB
+        response = table.get_item(
+            Key={
+                'call_id': call_id
+            }
+        )
+        
+        # If a grace period exists
+        if 'Item' in response:
+            # Delete the grace period entry
+            table.delete_item(
+                Key={
+                    'call_id': call_id
+                }
+            )
+            print(f"Session restart detected for {call_id}, grace period cancelled")
+            return True
+        
+        return False
+    except ClientError as e:
+        print(f"Error checking grace period for {call_id}: {e}")
+        return False
+
+def store_grace_period(call_id: str, expiry_time: datetime) -> bool:
+    """
+    Store grace period information in DynamoDB.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        # Store the grace period in DynamoDB
+        # TTL is in Unix timestamp format (seconds since epoch)
+        ttl = int(expiry_time.timestamp())
+        
+        table.put_item(
+            Item={
+                'call_id': call_id,
+                'request_id': str(uuid.uuid4()),  # Generate a unique ID for this request
+                'expiry_time': expiry_time.isoformat(),  # Store as ISO format string for readability
+                'ttl': ttl,  # DynamoDB TTL attribute
+                'created_at': datetime.now().isoformat()
+            }
+        )
+        print(f"Grace period stored for {call_id}, expires at {expiry_time}")
+        return True
+    except ClientError as e:
+        print(f"Error storing grace period for {call_id}: {e}")
+        return False
+
+def get_pending_grace_periods() -> list:
+    """
+    Get all pending grace periods that haven't expired.
+    This is useful for initializing timers after application restart.
+    """
+    try:
+        # Scan the table for pending grace periods
+        # Note: In production with many items, you might want to use pagination
+        now = datetime.now().isoformat()
+        response = table.scan(
+            FilterExpression='expiry_time > :now',
+            ExpressionAttributeValues={
+                ':now': now
+            }
+        )
+        return response.get('Items', [])
+    except ClientError as e:
+        print(f"Error getting pending grace periods: {e}")
+        return []
+
+# -------------- Request End Session with Grace Period --------------
+
+def request_end_session(call_id: str):
+    """
+    Schedule a session to end after a grace period of 2 minutes,
+    unless it's restarted during that time.
+    """
+    try:
+        print(f"End session requested for {call_id}, starting 2-minute grace period")
+        
+        # Calculate expiry time (2 minutes from now)
+        grace_period_seconds = 120
+        expiry_time = datetime.now() + timedelta(seconds=grace_period_seconds)
+        
+        # Store grace period in DynamoDB
+        if store_grace_period(call_id, expiry_time):
+            # Create a timer thread
+            def end_session_after_grace():
+                # Sleep until the grace period ends
+                seconds_to_wait = (expiry_time - datetime.now()).total_seconds()
+                if seconds_to_wait > 0:
+                    time.sleep(seconds_to_wait)
+                
+                # Check if the grace period still exists
+                # If it doesn't exist, it means it was cancelled
+                response = table.get_item(
+                    Key={
+                        'call_id': call_id
+                    }
+                )
+                
+                if 'Item' in response:
+                    # Grace period still exists, so end the session
+                    print(f"Grace period ended for {call_id}, ending session now")
+                    end_session(call_id)
+                    
+                    # Delete the grace period
+                    table.delete_item(
+                        Key={
+                            'call_id': call_id
+                        }
+                    )
+            
+            # Create and start the timer thread
+            timer = threading.Thread(target=end_session_after_grace)
+            timer.daemon = True  # Allow the thread to be terminated when the main program exits
+            timer.start()
+            
+            print(f"Grace period timer started for {call_id}")
+        else:
+            print(f"Failed to store grace period for {call_id}")
+    except Exception as error:
+        handle_exception(error)
 
 # -------------- End Session: Stop Live and Stop Recording  --------------
-
 
 def end_session(call_id):
     try:
@@ -159,15 +307,15 @@ def end_session(call_id):
 
         stopLive = call.stop_live()
         stopRecording = call.stop_recording()
-        # TODO: Eject all watchers, close live and end session
-        print(f"Stopped Live Call and Recording")
+        print(f"Stopped Live Call and Recording for {call_id}")
+        
+        # Start the process to upload the recording
+        upload_recording(call_id)
 
     except Exception as error:
         handle_exception(error)
 
-
 # -------------- Upload Video Recording: Get Recording and Upload to Church Videos --------------
-
 
 def upload_recording(call_id):
     try:
@@ -181,11 +329,10 @@ def upload_recording(call_id):
 
         # Call endpoint to end session and upload recorded livestream on the Main Backend
         headers = {
-            # "Content-Type": "application/json"
             "Content-Type": ""
         }
 
-        endpoint = main_backend_base_url + end_live_session_endpoint,
+        endpoint = main_backend_base_url + end_live_session_endpoint
         response = requests.put(
             f"http://uat.gospeltube.tv/api/v1/webhook/end-live-stream?recordingUrl={recording_url}&callId={call_id}",
             headers=headers,
@@ -202,12 +349,128 @@ def upload_recording(call_id):
     except Exception as error:
         handle_exception(error)
 
-
 # ---------------------------Error Handlers------------------------------------
-
 
 def handle_exception(error):
     # Handle all exceptions
     response = {"status": False, "message": str(error)}
     print("Error occured: ", str(response))
     return response, 500
+
+# ---------------------------Application Startup Initialization-----------------
+
+def initialize_grace_periods():
+    """
+    Initialize timers for any pending grace periods on application startup.
+    This ensures grace periods are maintained even if the application restarts.
+    """
+    pending_grace_periods = get_pending_grace_periods()
+    print(f"Found {len(pending_grace_periods)} pending grace periods on startup")
+    
+    for item in pending_grace_periods:
+        call_id = item['call_id']
+        expiry_time = datetime.fromisoformat(item['expiry_time'])
+        
+        # Only initialize if not already expired
+        if expiry_time > datetime.now():
+            print(f"Initializing timer for call {call_id}, expires at {expiry_time}")
+            
+            # Create a timer thread
+            def end_session_after_grace():
+                # Sleep until the grace period ends
+                seconds_to_wait = (expiry_time - datetime.now()).total_seconds()
+                if seconds_to_wait > 0:
+                    time.sleep(seconds_to_wait)
+                
+                # Check if the grace period still exists
+                response = table.get_item(
+                    Key={
+                        'call_id': call_id
+                    }
+                )
+                
+                if 'Item' in response:
+                    # Grace period still exists, so end the session
+                    print(f"Grace period ended for {call_id}, ending session now")
+                    end_session(call_id)
+                    
+                    # Delete the grace period
+                    table.delete_item(
+                        Key={
+                            'call_id': call_id
+                        }
+                    )
+            
+            # Create and start the timer thread
+            timer = threading.Thread(target=end_session_after_grace)
+            timer.daemon = True
+            timer.start()
+        else:
+            # Grace period already expired, clean it up
+            print(f"Grace period for {call_id} already expired, cleaning up")
+            table.delete_item(
+                Key={
+                    'call_id': call_id
+                }
+            )
+
+# -------------- FastAPI Application Startup --------------
+"""
+Example of how to integrate with FastAPI:
+
+@app.on_event("startup")
+async def startup_event():
+    # Initialize DynamoDB table if it doesn't exist
+    try:
+        dynamodb.create_table(
+            TableName=DYNAMODB_TABLE,
+            KeySchema=[
+                {
+                    'AttributeName': 'call_id',
+                    'KeyType': 'HASH'  # Partition key
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'call_id',
+                    'AttributeType': 'S'
+                }
+            ],
+            BillingMode='PAY_PER_REQUEST',
+            TimeToLiveSpecification={
+                'Enabled': True,
+                'AttributeName': 'ttl'
+            }
+        )
+        print(f"Table {DYNAMODB_TABLE} created successfully")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ResourceInUseException':
+            print(f"Table {DYNAMODB_TABLE} already exists")
+        else:
+            print(f"Error creating table: {e}")
+    
+    # Initialize grace periods from DynamoDB
+    initialize_grace_periods()
+
+@app.post("/webhook/end-live-request")
+async def webhook_end_live_request(request: Request):
+    data = await request.json()
+    call_id = data.get("callId")
+    if not call_id:
+        return {"status": False, "message": "Call ID is required"}
+    
+    # Instead of directly ending the session, request it with grace period
+    request_end_session(call_id)
+    return {"status": True, "message": f"End request received for {call_id}, grace period started"}
+
+@app.post("/webhook/start-live")
+async def webhook_start_live(request: Request):
+    data = await request.json()
+    call_id = data.get("callId")
+    if not call_id:
+        return {"status": False, "message": "Call ID is required"}
+    
+    # Start the session (this will also cancel any pending end timers)
+    start_session(call_id)
+    return {"status": True, "message": f"Session started for {call_id}"}
+"""

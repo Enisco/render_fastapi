@@ -1,4 +1,6 @@
 import os
+import boto3
+from botocore.exceptions import ClientError
 from fastapi import (
     FastAPI,
     Request,
@@ -19,13 +21,14 @@ import uvicorn
 from comments_websocket_service.comments_socket import WebSocketHandler
 from devotionals_service.devotional_service import process_devotional_document
 
-from livestream_service.livestream import get_user_token, setup_church_livestream_channel
+from livestream_service.livestream import get_user_token, initialize_grace_periods, setup_church_livestream_channel
 from livestream_service.webhook_handler import handle_webhook_event
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
 
 import sys
 import subprocess
+from contextlib import asynccontextmanager
 
 # Ensure python-multipart is installed
 try:
@@ -38,6 +41,13 @@ app = FastAPI()
 # Initialize HTTPBearer for receiving tokens
 security = HTTPBearer()
 
+# AWS Configuration
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
+DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
+
+# Initialize AWS clients
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+table = dynamodb.Table(DYNAMODB_TABLE)
 
 # To allow CORS for frontend applications
 app.add_middleware(
@@ -52,6 +62,41 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"message": "Hello, from GTube Livestream server, with comments WebSocket"}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize DynamoDB table if it doesn't exist
+    try:
+        dynamodb.create_table(
+            TableName=DYNAMODB_TABLE,
+            KeySchema=[
+                {
+                    'AttributeName': 'call_id',
+                    'KeyType': 'HASH'  # Partition key
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'call_id',
+                    'AttributeType': 'S'
+                }
+            ],
+            BillingMode='PAY_PER_REQUEST',
+            TimeToLiveSpecification={
+                'Enabled': True,
+                'AttributeName': 'ttl'
+            }
+        )
+        print(f"Table {DYNAMODB_TABLE} created successfully")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ResourceInUseException':
+            print(f"Table {DYNAMODB_TABLE} already exists")
+        else:
+            print(f"Error creating table: {e}")
+    
+    # Initialize grace periods from DynamoDB
+    initialize_grace_periods()
 
 
 @app.post("/receive_webhook")
@@ -154,6 +199,3 @@ if __name__ == "__main__":
 # python -m venv venv
 # venv\Scripts\activate
 # pip freeze > requirements.txt
-
-# deepseek_ai_api_key = 'sk-630b91e4926e42b7b1eb097ffe5a4c02'
-# gemini_ai_api_key = 'AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU'

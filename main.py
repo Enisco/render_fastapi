@@ -1,4 +1,6 @@
 import os
+import boto3
+from botocore.exceptions import ClientError
 from fastapi import (
     FastAPI,
     Request,
@@ -19,13 +21,14 @@ import uvicorn
 from comments_websocket_service.comments_socket import WebSocketHandler
 from devotionals_service.devotional_service import process_devotional_document
 
-from livestream_service.livestream import get_user_token, setup_church_livestream_channel
+from livestream_service.livestream import get_user_token, initialize_grace_periods, setup_church_livestream_channel
 from livestream_service.webhook_handler import handle_webhook_event
 from models.channel_response_model import ChurchChannelResponse
 from models.user_token_model import GetTokenResponse
 
 import sys
 import subprocess
+from contextlib import asynccontextmanager
 
 # Ensure python-multipart is installed
 try:
@@ -38,6 +41,13 @@ app = FastAPI()
 # Initialize HTTPBearer for receiving tokens
 security = HTTPBearer()
 
+# AWS Configuration
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
+DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
+
+# Initialize AWS clients
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+table = dynamodb.Table(DYNAMODB_TABLE)
 
 # To allow CORS for frontend applications
 app.add_middleware(
@@ -54,8 +64,8 @@ def root():
     return {"message": "Hello, from GTube Livestream server, with comments WebSocket"}
 
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     # Initialize DynamoDB table if it doesn't exist
     try:
         dynamodb.create_table(

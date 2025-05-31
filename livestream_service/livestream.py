@@ -451,26 +451,4 @@ async def startup_event():
     
     # Initialize grace periods from DynamoDB
     initialize_grace_periods()
-
-@app.post("/webhook/end-live-request")
-async def webhook_end_live_request(request: Request):
-    data = await request.json()
-    call_id = data.get("callId")
-    if not call_id:
-        return {"status": False, "message": "Call ID is required"}
-    
-    # Instead of directly ending the session, request it with grace period
-    request_end_session(call_id)
-    return {"status": True, "message": f"End request received for {call_id}, grace period started"}
-
-@app.post("/webhook/start-live")
-async def webhook_start_live(request: Request):
-    data = await request.json()
-    call_id = data.get("callId")
-    if not call_id:
-        return {"status": False, "message": "Call ID is required"}
-    
-    # Start the session (this will also cancel any pending end timers)
-    start_session(call_id)
-    return {"status": True, "message": f"Session started for {call_id}"}
 """

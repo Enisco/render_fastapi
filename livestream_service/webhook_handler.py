@@ -38,6 +38,7 @@ def handle_webhook_event(body: Any):
             participant_data = participant_json_to_model(body)
             call_id = str(participant_data.call_cid).split(":")[-1]
             print("Call ID: ", call_id)
+            # TODO: Handle this to know if grace period is yet to elapse, investigate why after 2 inutes, there's no update from grace period thread
             upload_recording(call_id)
 
         else:

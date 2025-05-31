@@ -263,6 +263,7 @@ def request_end_session(call_id: str):
         if store_grace_period(call_id, expiry_time):
             # Create a timer thread
             def end_session_after_grace():
+                print(f"Grace period ended for {call_id}, ending session now")
                 # Sleep until the grace period ends
                 seconds_to_wait = (expiry_time - datetime.now()).total_seconds()
                 if seconds_to_wait > 0:
@@ -278,7 +279,7 @@ def request_end_session(call_id: str):
                 
                 if 'Item' in response:
                     # Grace period still exists, so end the session
-                    print(f"Grace period ended for {call_id}, ending session now")
+                    print(f"Grace period still in database: {call_id}, ending session now")
                     end_session(call_id)
                     
                     # Delete the grace period
@@ -356,6 +357,9 @@ def end_session(call_id):
         print(f"Stopped Live Call and Recording for {call_id}")
         
     except Exception as error:
+        if "call egress is not running" in str(error).lower() or "stream error code 4" in str(error).lower():
+            print(f"Recording already ended for {call_id}")
+            upload_recording(call_id)
         handle_exception(error)
 
 # -------------- Upload Video Recording: Get Recording and Upload to Church Videos --------------
@@ -386,12 +390,6 @@ def upload_recording(call_id):
             headers=headers,
         )
         print(f"End Live Session Response: \n {response}  \n {response.text}", flush=True)
-        try:
-            json_data = response.json()
-            print(f"JSON Response: {json_data}", flush=True)
-        except ValueError:
-            print("Response is not in JSON format")
-
         print("Done ending session", flush=True)
 
     except Exception as error:
@@ -441,6 +439,7 @@ def initialize_grace_periods():
                     # Grace period still exists, so end the session
                     print(f"Grace period ended for {call_id}, ending session now")
                     end_session(call_id)
+                    upload_recording(call_id)
                     
                     # Delete the grace period
                     table.delete_item(

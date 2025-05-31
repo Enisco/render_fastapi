@@ -56,6 +56,7 @@ def get_user_token(user_id):
             "token": user_token,
         }
         return response
+    
     except Exception as error:
         handle_exception(error)
 
@@ -298,6 +299,51 @@ def request_end_session(call_id: str):
     except Exception as error:
         handle_exception(error)
 
+# -------------- Helper function to check if a call is in grace period  --------------
+
+def is_call_in_grace_period(call_id: str) -> bool:
+    """
+    Check if a call is currently in a grace period.
+    Returns True if the call is in grace period, False otherwise.
+    """
+    try:
+        # Try to get the grace period from DynamoDB
+        response = table.get_item(
+            Key={
+                'call_id': call_id
+            }
+        )
+        
+        # If a grace period exists, check if it's still valid
+        if 'Item' in response:
+            item = response['Item']
+            expiry_time_str = item['expiry_time']
+            expiry_time = datetime.fromisoformat(expiry_time_str)
+            
+            # Check if the grace period has expired
+            if datetime.now() < expiry_time:
+                print(f"Call {call_id} is in grace period until {expiry_time}")
+                return True
+            else:
+                # Grace period has expired, clean up the database entry
+                table.delete_item(
+                    Key={
+                        'call_id': call_id
+                    }
+                )
+                print(f"Grace period for {call_id} has expired, cleaned up database entry")
+                return False
+        
+        # No grace period found
+        return False
+        
+    except ClientError as e:
+        print(f"Error checking grace period for {call_id}: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error checking grace period for {call_id}: {e}")
+        return False
+
 # -------------- End Session: Stop Live and Stop Recording  --------------
 
 def end_session(call_id):
@@ -309,9 +355,6 @@ def end_session(call_id):
         stopRecording = call.stop_recording()
         print(f"Stopped Live Call and Recording for {call_id}")
         
-        # Start the process to upload the recording
-        upload_recording(call_id)
-
     except Exception as error:
         handle_exception(error)
 
@@ -319,6 +362,11 @@ def end_session(call_id):
 
 def upload_recording(call_id):
     try:
+        # Check if the call is still in grace period
+        if is_call_in_grace_period(call_id):
+            print(f"Call {call_id} is still in grace period, skipping call end and recording upload")
+            return
+    
         client = Stream(api_key=api_key, api_secret=api_secret)
         call = client.video.call(call_type=call_type, id=call_id)
 

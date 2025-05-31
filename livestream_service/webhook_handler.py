@@ -38,7 +38,7 @@ def handle_webhook_event(body: Any):
             participant_data = participant_json_to_model(body)
             call_id = str(participant_data.call_cid).split(":")[-1]
             print("Call ID: ", call_id)
-            # TODO: Handle this to know if grace period is yet to elapse, investigate why after 2 inutes, there's no update from grace period thread
+            
             upload_recording(call_id)
 
         else:
@@ -46,3 +46,13 @@ def handle_webhook_event(body: Any):
 
     except Exception as error:
         print("Error occured: ", error)
+
+'''
+elif event_type == "call.recording_ready":
+            participant_data = participant_json_to_model(body)
+            call_id = str(participant_data.call_cid).split(":")[-1]
+            print("Call ID: ", call_id)
+            upload_recording(call_id)
+
+From the updated code you gave me earlier, I want this function above to first check if the call is still in the grace period, if it's in the grace period, it should not upload recording yet
+'''

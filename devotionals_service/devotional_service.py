@@ -62,8 +62,10 @@ def process_devotional_document(file_path, auth_token):
 
     if file_path.endswith(".pdf"):
         text = extract_text_from_pdf(file_path)
+        print(f"Extracted texts from PDF:\n {text.strip()}")
     elif file_path.endswith(".docx"):
         text = extract_text_from_docx(file_path)
+        print(f"Extracted texts from Doc:\n {text.strip()}")
     else:
         print("Error: Unsupported file type")
         return

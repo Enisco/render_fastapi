@@ -27,7 +27,8 @@ MAX_SINGLE_CHUNK = 30000
 CHUNK_OVERLAP = 2000
 
 # Configure Gemini AI (make sure to set your API key)
-# genai.configure(api_key="YOUR_GEMINI_API_KEY")
+gemini_ai_api_key = "AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU"
+genai.configure(api_key=gemini_ai_api_key)
 
 
 # =============================================================================
@@ -102,18 +103,43 @@ def extract_text_from_txt_content(file_content: bytes) -> str:
 def smart_chunk_devotional_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE) -> List[str]:
     """Split text at devotional boundaries, not arbitrary character limits"""
     
-    # Common devotional separators (adjust based on your document format)
-    separators = [
-        r'\n\s*\d{1,2}[/-]\d{1,2}[/-]\d{4}',  # Date patterns like "12/25/2024"
-        r'\n\s*\w+\s+\d{1,2},?\s+\d{4}',      # "December 25, 2024"
-        r'\n\s*DAY\s+\d+',                     # "DAY 1", "DAY 2"
-        r'\n\s*\d{1,2}(st|nd|rd|th)\s+\w+',   # "1st January"
-        r'\n\s*\d{1,2}\.\s*\w+',              # "25. December"
+    # Common devotional separators
+    datePatternsSeperators = [
+        # Numeric Date Patterns (DD/MM/YYYY, MM/DD/YYYY, YYYY/MM/DD, DD.MM.YYYY)
+        r'\n\s*\d{1,2}[/-]\d{1,2}[/-]\d{4}',    # "12/25/2024", "25-12-2024"
+        r'\n\s*\d{4}[/-]\d{1,2}[/-]\d{1,2}',    # "2024-12-25"
+        r'\n\s*\d{1,2}\.\d{1,2}\.\d{4}',        # "25.12.2024"
+
+        # Textual Month, Day, Year Patterns
+        r'\n\s*\w+\s+\d{1,2},?\s+\d{4}',        # "December 25, 2024", "Dec 25 2024"
+        r'\n\s*\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b', # Specific month abbr + day, year
+        r'\n\s*\d{1,2}\s+\w+\s+\d{4}',          # "25 December 2024" (Day Month Year without comma)
+
+        # Day of Week + Date Patterns
+        r'\n\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+\w+\s+\d{1,2},?\s+\d{4}', # "Tuesday, December 25, 2024"
+        r'\n\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s+\w+\s+\d{1,2},?\s+\d{4}', # "Tue, Dec 25, 2024"
+
+        # Ordinal Day + Month Patterns
+        r'\n\s*\d{1,2}(st|nd|rd|th)\s+\w+',     # "1st January", "22nd February"
+
+        # Month Year Patterns
+        r'\n\s*\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\b', # "December 2024"
+        r'\n\s*\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}\b', # "Dec 2024"
+
+        # "DAY X" pattern (already present)
+        r'\n\s*DAY\s+\d+',                      # "DAY 1", "DAY 2"
+
+        # Numeric Month. Day (e.g., "25. December") - already present but clarified
+        r'\n\s*\d{1,2}\.\s*\w+',                # "25. December" (this specific one might be tricky due to ambiguity, but you had it)
+
+        # With "Date:" prefix (can be expanded with more date formats)
+        r'\n\s*Date:\s*\d{1,2}[/-]\d{1,2}[/-]\d{4}', # "Date: 12/25/2024"
+        r'\n\s*Date:\s*\w+\s+\d{1,2},?\s+\d{4}', # "Date: December 25, 2024"
     ]
     
     # Find all potential devotional start positions
     split_positions = []
-    for pattern in separators:
+    for pattern in datePatternsSeperators:
         matches = re.finditer(pattern, text, re.IGNORECASE)
         for match in matches:
             split_positions.append(match.start())
@@ -230,24 +256,31 @@ def process_with_gemini_safe(text: str, auth_token: str, church_id: Optional[str
             raise ValueError("Authentication token is required")
         
         # Limit text based on available resources
-        max_chars = min(MAX_SINGLE_CHUNK, len(text))
+        # max_chars = min(MAX_SINGLE_CHUNK, len(text))
         # if memory.percent > 70:
         #     max_chars = min(20000, len(text))
         # max_chars = min(20000, len(text))
-        limited_text = text[:max_chars]
+        # limited_text = text[:max_chars]
         
         model = genai.GenerativeModel("models/gemini-1.5-flash")
         
         prompt = f"""
         Extract structured devotional data from this document.
         
-        Instructions:
-        1. Identify each devotional entry carefully
-        2. Extract the date in YYYY-MM-DD format (convert month names to numbers)
-        3. Extract the title/heading of each devotional
-        4. Extract the bible verse reference and text
-        5. Extract the full devotional content/message
-        6. Only include COMPLETE devotionals
+        STRICT RULES:
+        1. Return ONLY a JSON array, nothing else
+        2. Use double quotes for all strings
+        3. Escape any quotes inside strings with backslash
+        4. No trailing commas
+        5. No comments or explanations
+
+        Extract devotionals from the text below. For each devotional found, create an object with these exact fields:
+        - "date": string or null (format: "YYYY-MM-DD" if found)
+        - "title": string (never empty)
+        - "bible_verses": array of strings (Bible references)
+        - "content": string (main devotional text)
+
+        If no devotionals found, return: []
         
         Return ONLY valid JSON in this exact format:
         {{
@@ -263,11 +296,11 @@ def process_with_gemini_safe(text: str, auth_token: str, church_id: Optional[str
           ]
         }}
 
-        Document content:
-        {limited_text}
+        TEXT TO PROCESS:
+        {text}
         """
         
-        response = model.generate_content(
+        initial_sort_response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.1,
@@ -276,11 +309,10 @@ def process_with_gemini_safe(text: str, auth_token: str, church_id: Optional[str
             )
         )
         
-        if not response or not response.text:
+        if not initial_sort_response or not initial_sort_response.text:
             raise ValueError("Empty response from Gemini AI")
         
-        # Clean and validate response
-        response_text = response.text.strip()
+        response_text = initial_sort_response.text.strip()
         
         # Remove markdown code blocks
         if response_text.startswith("```json"):
@@ -289,8 +321,36 @@ def process_with_gemini_safe(text: str, auth_token: str, church_id: Optional[str
             response_text = response_text[3:]
         if response_text.endswith("```"):
             response_text = response_text[:-3]
+            
+        # Clean and revalidate response
+        # prompt = f"""{{
+        #   "church_id": "{church_id or 'unknown'}",
+        #   "total_devotionals": <number>,
+        #   "devotionals": [
+        #     {{
+        #       "date": "YYYY-MM-DD",
+        #       "title": "Title of devotional",
+        #       "bible_verse": "Verse reference and text",
+        #       "content": "Full content of the devotional"
+        #     }}
+        #   ]
+        # }}
         
-        response_text = response_text.strip()
+        # Return a list of such JSON array as above which can be directly parsed using json.loads in Python
+
+        # TEXT TO PROCESS:
+        # {response_text}
+        # """
+        
+        # final_sort_response = model.generate_content(
+        #     prompt,
+        #     generation_config=genai.types.GenerationConfig(
+        #         temperature=0.1,
+        #         max_output_tokens=4096,
+        #         candidate_count=1,
+        #     )
+        # )
+        
         
         # Validate JSON
         parsed_response = json.loads(response_text)
@@ -461,14 +521,17 @@ def process_devotional_document(filename: str, file_content: bytes, auth_token: 
             raise ValueError("No text could be extracted from the file")
         
         print(f"Total extracted text length: {len(text)} characters")
+        print(f"Extracted raw text: {text}")
         
         # Choose processing method based on text size
-        if len(text) > MAX_SINGLE_CHUNK:
-            print("Large document detected - using smart chunking")
-            response = process_large_document_smart(text, auth_token, church_id)
-        else:
-            print("Processing as single document")
-            response = process_with_gemini_safe(text, auth_token, church_id)
+        # if len(text) > MAX_SINGLE_CHUNK:
+        #     print("Large document detected - using smart chunking")
+        #     response = process_large_document_smart(text, auth_token, church_id)
+        # else:
+        #     print("Processing as single document")
+        #     response = process_with_gemini_safe(text, auth_token, church_id)
+        response = process_with_gemini_safe(text, auth_token, church_id)
+        print(f"Response from gemini: {response}")
         
         return response
         
@@ -501,7 +564,7 @@ def process_local_devotional_file(file_path: str, auth_token: Optional[str] = No
             church_id=church_id
         )
         
-        print(f"\nDevotional processing completed!")
+        print(f"\nDevotional processing completed: {response}")
         return response
         
     except Exception as e:

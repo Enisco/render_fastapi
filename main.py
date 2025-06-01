@@ -46,9 +46,12 @@ security = HTTPBearer()
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
 DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
 
-# Devotional docs preferences
+# Devotional docs preferences Configurations
 ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".txt"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+DEFAULT_CHUNK_SIZE = 25000
+MAX_SINGLE_CHUNK = 30000
+CHUNK_OVERLAP = 2000
 
 # Initialize AWS clients
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)

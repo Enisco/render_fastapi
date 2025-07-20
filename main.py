@@ -245,5 +245,4 @@ if __name__ == "__main__":
 # venv\Scripts\activate
 # pip freeze > requirements.txt
 
-# OpenAI API Key: sk-lDSgtaTXlza3GHbI5dac6COJKcf5noO6gaml0xwSyFT3BlbkFJqIGmo4J39750bF-e80l9mv_c7Zep1gOdPtpG6CSoYA
 # GEMINI_API_KEY = "AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU"

@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import time
 
 # Gemini API setup
-# GEMINI_API_KEY = "AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU"
 GEMINI_API_KEY = "AIzaSyDnNe3Z65YMJOha2JoecnhhElISyju5h8c"
 genai.configure(api_key=GEMINI_API_KEY)
 

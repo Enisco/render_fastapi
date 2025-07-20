@@ -377,7 +377,7 @@ def upload_recording(call_id):
 
         list_recordings = call.list_recordings()
         print("\n\n List of recordings: ", list_recordings.data)
-        recording_url = f"https://gospeltube533267336299.s3.us-east-2.amazonaws.com/gtube_liverecordings_s3bucket/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
+        recording_url = f"https://{live_recording_storage}.s3.us-east-2.amazonaws.com/gtube_liverecordings_s3bucket/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
         print("\n\n ------ Recordings URL: ", recording_url)
 
         # Call endpoint to end session and upload recorded livestream on the Main Backend

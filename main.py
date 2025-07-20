@@ -1,6 +1,7 @@
 import os
 import boto3
 from botocore.exceptions import ClientError
+from pathlib import Path
 from fastapi import (
     FastAPI,
     Request,
@@ -44,6 +45,13 @@ security = HTTPBearer()
 # AWS Configuration
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
 DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
+
+# Devotional docs preferences Configurations
+ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".txt"}
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+DEFAULT_CHUNK_SIZE = 25000
+MAX_SINGLE_CHUNK = 30000
+CHUNK_OVERLAP = 2000
 
 # Initialize AWS clients
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
@@ -140,7 +148,6 @@ async def create_church_livestream_channel(church_id: str):
 
 manager = WebSocketHandler()
 
-
 @app.websocket("/ws/{topic}")
 async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
     """FastAPI WebSocket route that interacts with WebSocketHandler."""
@@ -166,7 +173,6 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
 
 # Bulk devotional upload endpoint
 
-
 @app.post("/church/devotional/upload_doc/{church_id}")
 async def upload_bulk_devotional(
     church_id: str,
@@ -181,14 +187,53 @@ async def upload_bulk_devotional(
     token = credentials.credentials
     print(f"Received file for church {church_id}")
     print(f"Token received: {token}")
-
-    response = process_devotional_document(file.filename)
-
+        
+    # Validate file type
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    
+    file_extension = Path(file.filename).suffix.lower()
+    if file_extension not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    
+    # Check file size
+    file_content = await file.read()
+    if len(file_content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 50MB)")
+    
+    if len(file_content) == 0:
+        raise HTTPException(status_code=400, detail="Empty file")
+    
     try:
+        # Pass both filename and content to processing function
+        response = process_devotional_document(
+            filename=file.filename, 
+            file_content=file_content,
+            token=token,
+            church_id=church_id
+        )
+        
+        # Parse and return the response
         admonitions_data = json.loads(response)
         return admonitions_data
+        
     except json.JSONDecodeError as e:
-        return {"error": f"Error parsing response: {str(e)}: {response}"}
+        print(f"JSON decode error: {str(e)}")
+        print(f"Raw response: {response}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error parsing devotional data: {str(e)}"
+        )
+    except Exception as e:
+        print(f"Processing error: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error processing devotional document: {str(e)}"
+        )
+
 
 
 if __name__ == "__main__":
@@ -199,3 +244,5 @@ if __name__ == "__main__":
 # python -m venv venv
 # venv\Scripts\activate
 # pip freeze > requirements.txt
+
+# GEMINI_API_KEY = "AIzaSyDgFx4bfhJG4RkzxEs10J6yZkK-3jVfYmU"

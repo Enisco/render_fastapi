@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from comments_websocket_service.comments_socket import WebSocketHandler
-from devotionals_service.devotional_service import process_devotional_document
+# from devotionals_service.devotional_service import process_devotionals_by_3_day_chunks
 
 from livestream_service.livestream import get_user_token, initialize_grace_periods, setup_church_livestream_channel
 from livestream_service.webhook_handler import handle_webhook_event
@@ -173,67 +173,66 @@ async def comments_websocket_endpoint(websocket: WebSocket, topic: str):
 
 # Bulk devotional upload endpoint
 
-@app.post("/church/devotional/upload_doc/{church_id}")
-async def upload_bulk_devotional(
-    church_id: str,
-    file: UploadFile = File(...),
-    credentials: HTTPAuthorizationCredentials = Security(security),
-):
-    """
-    Upload bulk devotionals for a church, allows only PDF, Word doc/docx, and TXT file formats.
-    Handle file upload, extract text, and return structured devotionals, each containing the date, title, bible verse and content of each devotional.
-    """
+# @app.post("/church/devotional/upload_doc/{church_id}")
+# async def upload_bulk_devotional(
+#     church_id: str,
+#     file: UploadFile = File(...),
+#     credentials: HTTPAuthorizationCredentials = Security(security),
+# ):
+#     """
+#     Upload bulk devotionals for a church, allows only PDF, Word doc/docx, and TXT file formats.
+#     Handle file upload, extract text, and return structured devotionals, each containing the date, title, bible verse and content of each devotional.
+#     """
 
-    token = credentials.credentials
-    print(f"Received file for church {church_id}")
-    print(f"Token received: {token}")
+#     token = credentials.credentials
+#     print(f"Received file for church {church_id}")
+#     print(f"Token received: {token}")
         
-    # Validate file type
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No filename provided")
+#     # Validate file type
+#     if not file.filename:
+#         raise HTTPException(status_code=400, detail="No filename provided")
     
-    file_extension = Path(file.filename).suffix.lower()
-    if file_extension not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
+#     file_extension = Path(file.filename).suffix.lower()
+#     if file_extension not in ALLOWED_EXTENSIONS:
+#         raise HTTPException(
+#             status_code=400, 
+#             detail=f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+#         )
     
-    # Check file size
-    file_content = await file.read()
-    if len(file_content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="File too large (max 50MB)")
+#     # Check file size
+#     file_content = await file.read()
+#     if len(file_content) > MAX_FILE_SIZE:
+#         raise HTTPException(status_code=400, detail="File too large (max 50MB)")
     
-    if len(file_content) == 0:
-        raise HTTPException(status_code=400, detail="Empty file")
+#     if len(file_content) == 0:
+#         raise HTTPException(status_code=400, detail="Empty file")
     
-    try:
-        # Pass both filename and content to processing function
-        response = process_devotional_document(
-            filename=file.filename, 
-            file_content=file_content,
-            token=token,
-            church_id=church_id
-        )
+#     try:
+#         # Pass both filename and content to processing function
+#         response = process_devotionals_by_3_day_chunks(
+#             filename=file.filename, 
+#             file_content=file_content,
+#             token=token,
+#             church_id=church_id
+#         )
         
-        # Parse and return the response
-        admonitions_data = json.loads(response)
-        return admonitions_data
+#         # Parse and return the response
+#         admonitions_data = json.loads(response)
+#         return admonitions_data
         
-    except json.JSONDecodeError as e:
-        print(f"JSON decode error: {str(e)}")
-        print(f"Raw response: {response}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error parsing devotional data: {str(e)}"
-        )
-    except Exception as e:
-        print(f"Processing error: {str(e)}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error processing devotional document: {str(e)}"
-        )
-
+#     except json.JSONDecodeError as e:
+#         print(f"JSON decode error: {str(e)}")
+#         print(f"Raw response: {response}")
+#         raise HTTPException(
+#             status_code=500, 
+#             detail=f"Error parsing devotional data: {str(e)}"
+#         )
+#     except Exception as e:
+#         print(f"Processing error: {str(e)}")
+#         raise HTTPException(
+#             status_code=500, 
+#             detail=f"Error processing devotional document: {str(e)}"
+#         )
 
 
 if __name__ == "__main__":

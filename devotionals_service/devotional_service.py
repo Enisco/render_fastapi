@@ -85,7 +85,8 @@ Use exactly this structure:
 ✅ Output only devotional entries found in the text.
 ❌ If no entry is found for a date, skip that date.
 ❌ Do not add extra commentary or formatting.
-✅ Ensure the JSON is properly closed and parseable, always.
+✅ Ensure the JSON is properly closed and parseable, always. 
+✅ Always ensure the JSON is properly closed and parseable.
 
 Here is the document:
 {text}
@@ -175,16 +176,16 @@ if __name__ == "__main__":
     # file_path = "RHAPSODY_OF_REALITIES_DECEMBER_2024.pdf"
     # file_path = "tube_devo_test1.pdf"
     # file_path = "tube_devo_test1.docx"
-    file_path = "Closer to God each day - 365 devotions for everyday living -- Meyer, Joyce -- ( WeLib.org ).pdf"
+    # file_path = "Closer to God each day - 365 devotions for everyday living -- Meyer, Joyce -- ( WeLib.org ).pdf"
     # file_path = "Jesus Calling- Seeking Peace in His Presence.pdf"
-    # file_path = "New Morning Mercies- A Daily Gospel Devotional (Gift -- Tripp, Paul David -- ( WeLib.org ).pdf"
+    file_path = "New Morning Mercies- A Daily Gospel Devotional (Gift -- Tripp, Paul David -- ( WeLib.org ).pdf"
     # file_path = "openheavens.com.ng.pdf"
     # file_path = "MANAGING YOUR EMOTIONS - daily wisdom for remaining stable -- Joyce Meyer -- ( WeLib.org ).pdf"
     # Optional date range (or set to None to auto-detect)
-    user_start = "2024-04-01"   # or None
-    user_end = "2024-04-30"     # or None
-    # user_start = None
-    # user_end = None
+    # user_start = "2024-04-01"   # or None
+    # user_end = "2024-04-30"     # or None
+    user_start = None
+    user_end = None
 
     process_devotionals_by_3_day_chunks(
         file_path,

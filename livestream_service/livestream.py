@@ -33,7 +33,8 @@ api_secret = "mdmaxcad9yqbvp39yc45h39b2ebjcjwzu7pevfpnk7jnxa4dnkvraxpntc643ztm"
 call_type = "livestream"
 admin_call_role = "admin"
 user_call_role = "user"
-live_recording_storage = "stream-s3"
+# live_recording_storage = "stream-s3"
+live_recording_storage = "gospeltube533267336299"
 
 main_backend_base_url = "https://uat.gospeltube.tv"
 start_live_session_endpoint = "/api/v1/webhook/church/videos/live"
@@ -376,7 +377,7 @@ def upload_recording(call_id):
 
         list_recordings = call.list_recordings()
         print("\n\n List of recordings: ", list_recordings.data)
-        recording_url = f"https://gospeltube533267336299.s3.us-east-2.amazonaws.com/{live_recording_storage}/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
+        recording_url = f"https://gospeltube533267336299.s3.us-east-2.amazonaws.com/gtube_liverecordings_s3bucket/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
         print("\n\n ------ Recordings URL: ", recording_url)
 
         # Call endpoint to end session and upload recorded livestream on the Main Backend

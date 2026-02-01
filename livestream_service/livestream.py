@@ -50,7 +50,7 @@ def get_user_token(user_id):
         print("User Token generated for " + user_id + ": " + user_token)
 
         response = {
-            "status": False,
+            "status": True,
             "id": user_id,
             "message": "Success",
             "token": user_token,

@@ -1,24 +1,15 @@
 import time
 import stream
 import requests
-
-import asyncio
 import threading
-from typing import Dict
-from datetime import datetime, timedelta
-import boto3
-from botocore.exceptions import ClientError
 import uuid
 import os
-from typing import Optional
+from typing import Dict, Optional
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
-# AWS Configuration
-AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
-DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
-
-# Initialize AWS clients
-dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
-table = dynamodb.Table(DYNAMODB_TABLE)
+import boto3
+from botocore.exceptions import ClientError
 
 from getstream import Stream
 from getstream.models import CallRequest, CallSettingsRequest
@@ -27,17 +18,31 @@ from getstream.models import UserRequest
 
 from utils.string_utils import generate_unique_string
 
-api_key = "gcwwb5wde69h"
-api_secret = "mdmaxcad9yqbvp39yc45h39b2ebjcjwzu7pevfpnk7jnxa4dnkvraxpntc643ztm"
+# Load environment variables
+load_dotenv()
 
-call_type = "livestream"
-admin_call_role = "admin"
-user_call_role = "user"
-live_recording_storage = "stream-s3"
+# Stream API Configuration
+api_key = os.getenv('STREAM_API_KEY')
+api_secret = os.getenv('STREAM_API_SECRET')
 
-main_backend_base_url = "https://uat.gospeltube.tv"
-start_live_session_endpoint = "/api/v1/webhook/church/videos/live"
-end_live_session_endpoint = "/api/v1/webhook/end-live-stream"
+# Stream Configuration
+call_type = os.getenv('CALL_TYPE', 'livestream')
+admin_call_role = os.getenv('ADMIN_CALL_ROLE', 'admin')
+user_call_role = os.getenv('USER_CALL_ROLE', 'user')
+live_recording_storage = os.getenv('LIVE_RECORDING_STORAGE', 'stream-s3')
+
+# Backend Configuration
+main_backend_base_url = os.getenv('MAIN_BACKEND_BASE_URL')
+start_live_session_endpoint = os.getenv('START_LIVE_SESSION_ENDPOINT')
+end_live_session_endpoint = os.getenv('END_LIVE_SESSION_ENDPOINT')
+
+# AWS Configuration
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-2')
+DYNAMODB_TABLE = os.getenv('DYNAMODB_TABLE', 'LiveSessionGracePeriods')
+
+# Initialize AWS clients
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+table = dynamodb.Table(DYNAMODB_TABLE)
 
 
 # ----------------------- Generate Token for User --------------------------
@@ -152,7 +157,7 @@ def start_session(call_id: str):
 
         endpoint = main_backend_base_url + start_live_session_endpoint
         response = requests.post(
-            f"http://uat.gospeltube.tv/api/v1/webhook/church/videos/live?callId={call_id}",
+            f"{main_backend_base_url}{start_live_session_endpoint}?callId={call_id}",
             json={},
             headers=headers
         )        
@@ -376,7 +381,7 @@ def upload_recording(call_id):
 
         list_recordings = call.list_recordings()
         print("\n\n List of recordings: ", list_recordings.data)
-        recording_url = f"https://{live_recording_storage}.s3.us-east-2.amazonaws.com/gtube_liverecordings_s3bucket/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
+        recording_url = f"https://{live_recording_storage}.s3.{AWS_REGION}.amazonaws.com/gtube_liverecordings_s3bucket/{call_type}_{call_id}/{list_recordings.data.recordings[0].filename}"
         print("\n\n ------ Recordings URL: ", recording_url)
 
         # Call endpoint to end session and upload recorded livestream on the Main Backend
@@ -386,7 +391,7 @@ def upload_recording(call_id):
 
         endpoint = main_backend_base_url + end_live_session_endpoint
         response = requests.put(
-            f"http://uat.gospeltube.tv/api/v1/webhook/end-live-stream?recordingUrl={recording_url}&callId={call_id}",
+            f"{main_backend_base_url}{end_live_session_endpoint}?recordingUrl={recording_url}&callId={call_id}",
             headers=headers,
         )
         print(f"End Live Session Response: \n {response}  \n {response.text}", flush=True)
@@ -460,42 +465,3 @@ def initialize_grace_periods():
                     'call_id': call_id
                 }
             )
-
-# -------------- FastAPI Application Startup --------------
-"""
-Example of how to integrate with FastAPI:
-
-@app.on_event("startup")
-async def startup_event():
-    # Initialize DynamoDB table if it doesn't exist
-    try:
-        dynamodb.create_table(
-            TableName=DYNAMODB_TABLE,
-            KeySchema=[
-                {
-                    'AttributeName': 'call_id',
-                    'KeyType': 'HASH'  # Partition key
-                }
-            ],
-            AttributeDefinitions=[
-                {
-                    'AttributeName': 'call_id',
-                    'AttributeType': 'S'
-                }
-            ],
-            BillingMode='PAY_PER_REQUEST',
-            TimeToLiveSpecification={
-                'Enabled': True,
-                'AttributeName': 'ttl'
-            }
-        )
-        print(f"Table {DYNAMODB_TABLE} created successfully")
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'ResourceInUseException':
-            print(f"Table {DYNAMODB_TABLE} already exists")
-        else:
-            print(f"Error creating table: {e}")
-    
-    # Initialize grace periods from DynamoDB
-    initialize_grace_periods()
-"""

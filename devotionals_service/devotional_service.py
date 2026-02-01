@@ -1,18 +1,25 @@
 import json
 import pdfplumber
-from docx import Document
 import os
+import time
+from datetime import datetime, timedelta
+from docx import Document
+from dotenv import load_dotenv
 import google.generativeai as genai
 from datetime import datetime, timedelta
 import time
 
+# Load environment variables
+load_dotenv()
+
 # Gemini API setup
-GEMINI_API_KEY = "AIzaSyDnNe3Z65YMJOha2JoecnhhElISyju5h8c"
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=GEMINI_API_KEY)
 
 # ---------- Text Extraction ----------
 
 def extract_text_from_pdf(pdf_file):
+    """Extract text from PDF file using pdfplumber."""
     text = ""
     with pdfplumber.open(pdf_file) as pdf:
         for page in pdf.pages:
@@ -22,12 +29,22 @@ def extract_text_from_pdf(pdf_file):
     return text.strip()
 
 def extract_text_from_docx(docx_file):
+    """Extract text from DOCX file."""
     doc = Document(docx_file)
     return "\n".join([para.text.strip() for para in doc.paragraphs if para.text.strip()])
 
 # ---------- Gemini: Detect Start/End Dates ----------
 
 def detect_date_range_with_gemini(text):
+    """
+    Use Gemini AI to detect the earliest and latest dates in a devotional document.
+    
+    Args:
+        text (str): The full text of the devotional document
+        
+    Returns:
+        dict: Dictionary containing 'start_date' and 'end_date' or None if detection fails
+    """
     model = genai.GenerativeModel("models/gemini-2.0-flash")
     prompt = f"""
 You are a JSON-only API.
@@ -57,6 +74,16 @@ Here is the document:
 # ---------- Gemini: Extract Devotionals ----------
 
 def process_multiple_days_with_gemini(text, dates):
+    """
+    Extract devotional entries for multiple specific dates using Gemini AI.
+    
+    Args:
+        text (str): The full text of the devotional document
+        dates (list): List of dates in YYYY-MM-DD format
+        
+    Returns:
+        str: JSON string containing extracted devotionals or None if extraction fails
+    """
     model = genai.GenerativeModel("models/gemini-1.5-flash")
     date_list_str = ", ".join(dates)
 
@@ -105,6 +132,15 @@ def process_devotionals_by_3_day_chunks(
     user_start_date=None,
     user_end_date=None
 ):
+    """
+    Process devotional document and extract entries in 3-day chunks.
+    
+    Args:
+        file_path (str): Path to the devotional file (PDF or DOCX)
+        output_file (str): Path where the output JSON will be saved
+        user_start_date (str): Optional start date in YYYY-MM-DD format
+        user_end_date (str): Optional end date in YYYY-MM-DD format
+    """
     if not os.path.exists(file_path):
         print(f"[ERROR] File not found: {file_path}")
         return
@@ -172,6 +208,7 @@ def process_devotionals_by_3_day_chunks(
 # ---------- Run Example ----------
 
 if __name__ == "__main__":
+    # Example file paths (uncomment the one you want to use)
     # file_path = "RHAPSODY_OF_REALITIES_DECEMBER_2024.pdf"
     # file_path = "tube_devo_test1.pdf"
     # file_path = "tube_devo_test1.docx"
@@ -180,11 +217,10 @@ if __name__ == "__main__":
     file_path = "New Morning Mercies- A Daily Gospel Devotional (Gift -- Tripp, Paul David -- ( WeLib.org ).pdf"
     # file_path = "openheavens.com.ng.pdf"
     # file_path = "MANAGING YOUR EMOTIONS - daily wisdom for remaining stable -- Joyce Meyer -- ( WeLib.org ).pdf"
+    
     # Optional date range (or set to None to auto-detect)
-    # user_start = "2024-04-01"   # or None
-    # user_end = "2024-04-30"     # or None
-    user_start = None
-    user_end = None
+    user_start = None  # e.g., "2024-04-01"
+    user_end = None    # e.g., "2024-04-30"
 
     process_devotionals_by_3_day_chunks(
         file_path,
